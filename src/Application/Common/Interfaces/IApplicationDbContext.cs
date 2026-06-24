@@ -4,9 +4,12 @@ namespace Archiva.Application.Common.Interfaces;
 
 public interface IApplicationDbContext
 {
-    DbSet<TodoList> TodoLists { get; }
-
-    DbSet<TodoItem> TodoItems { get; }
+    DbSet<Meeting> Meetings { get; }
+    DbSet<Document> Documents { get; }
+    DbSet<Tag> Tags { get; }
+    DbSet<MeetingTag> MeetingTags { get; }
+    DbSet<Organization> Organizations { get; }
+    DbSet<OrganizationUser> OrganizationUsers { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

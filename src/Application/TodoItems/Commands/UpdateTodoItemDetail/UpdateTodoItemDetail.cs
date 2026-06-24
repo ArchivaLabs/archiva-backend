@@ -23,10 +23,12 @@ public class UpdateTodoItemDetailCommandHandler : IRequestHandler<UpdateTodoItem
         _context = context;
     }
 
-    public async Task Handle(UpdateTodoItemDetailCommand request, CancellationToken cancellationToken)
+    public async Task Handle(
+        UpdateTodoItemDetailCommand request,
+        CancellationToken cancellationToken
+    )
     {
-        var entity = await _context.TodoItems
-            .FindAsync([request.Id], cancellationToken);
+        var entity = await _context.TodoItems.FindAsync([request.Id], cancellationToken);
 
         Guard.Against.NotFound(request.Id, entity);
 

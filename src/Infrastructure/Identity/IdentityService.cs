@@ -15,7 +15,8 @@ public class IdentityService : IIdentityService
     public IdentityService(
         UserManager<ApplicationUser> userManager,
         IUserClaimsPrincipalFactory<ApplicationUser> userClaimsPrincipalFactory,
-        IAuthorizationService authorizationService)
+        IAuthorizationService authorizationService
+    )
     {
         _userManager = userManager;
         _userClaimsPrincipalFactory = userClaimsPrincipalFactory;
@@ -29,13 +30,12 @@ public class IdentityService : IIdentityService
         return user?.UserName;
     }
 
-    public async Task<(Result Result, string UserId)> CreateUserAsync(string userName, string password)
+    public async Task<(Result Result, string UserId)> CreateUserAsync(
+        string userName,
+        string password
+    )
     {
-        var user = new ApplicationUser
-        {
-            UserName = userName,
-            Email = userName,
-        };
+        var user = new ApplicationUser { UserName = userName, Email = userName };
 
         var result = await _userManager.CreateAsync(user, password);
 

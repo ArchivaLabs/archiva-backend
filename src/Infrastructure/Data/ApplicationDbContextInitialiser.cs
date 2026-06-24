@@ -15,7 +15,8 @@ public static class InitialiserExtensions
     {
         using var scope = app.Services.CreateScope();
 
-        var initialiser = scope.ServiceProvider.GetRequiredService<ApplicationDbContextInitialiser>();
+        var initialiser =
+            scope.ServiceProvider.GetRequiredService<ApplicationDbContextInitialiser>();
 
         await initialiser.InitialiseAsync();
         await initialiser.SeedAsync();
@@ -29,7 +30,12 @@ public class ApplicationDbContextInitialiser
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
 
-    public ApplicationDbContextInitialiser(ILogger<ApplicationDbContextInitialiser> logger, ApplicationDbContext context, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+    public ApplicationDbContextInitialiser(
+        ILogger<ApplicationDbContextInitialiser> logger,
+        ApplicationDbContext context,
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole> roleManager
+    )
     {
         _logger = logger;
         _context = context;
@@ -76,14 +82,18 @@ public class ApplicationDbContextInitialiser
         }
 
         // Default users
-        var administrator = new ApplicationUser { UserName = "administrator@localhost", Email = "administrator@localhost" };
+        var administrator = new ApplicationUser
+        {
+            UserName = "administrator@localhost",
+            Email = "administrator@localhost",
+        };
 
         if (_userManager.Users.All(u => u.UserName != administrator.UserName))
         {
             await _userManager.CreateAsync(administrator, "Administrator1!");
             if (!string.IsNullOrWhiteSpace(administratorRole.Name))
             {
-                await _userManager.AddToRolesAsync(administrator, new [] { administratorRole.Name });
+                await _userManager.AddToRolesAsync(administrator, new[] { administratorRole.Name });
             }
         }
 
@@ -91,18 +101,23 @@ public class ApplicationDbContextInitialiser
         // Seed, if necessary
         if (!_context.TodoLists.Any())
         {
-            _context.TodoLists.Add(new TodoList
-            {
-                Title = "Tasks",
-                Colour = Colour.Green,
-                Items =
+            _context.TodoLists.Add(
+                new TodoList
                 {
-                    new TodoItem { Title = "Make a todo list 📃" },
-                    new TodoItem { Title = "Check off the first item ✅" },
-                    new TodoItem { Title = "Realise you've already done two things on the list! 🤯"},
-                    new TodoItem { Title = "Reward yourself with a nice, long nap 🏆" },
+                    Title = "Tasks",
+                    Colour = Colour.Green,
+                    Items =
+                    {
+                        new TodoItem { Title = "Make a todo list 📃" },
+                        new TodoItem { Title = "Check off the first item ✅" },
+                        new TodoItem
+                        {
+                            Title = "Realise you've already done two things on the list! 🤯",
+                        },
+                        new TodoItem { Title = "Reward yourself with a nice, long nap 🏆" },
+                    },
                 }
-            });
+            );
 
             await _context.SaveChangesAsync();
         }

@@ -9,11 +9,17 @@ namespace Archiva.Infrastructure.Data;
 
 public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplicationDbContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options) { }
 
-    public DbSet<TodoList> TodoLists => Set<TodoList>();
+    public DbSet<Meeting> Meetings => Set<Meeting>();
 
-    public DbSet<TodoItem> TodoItems => Set<TodoItem>();
+    public DbSet<Document> Documents => Set<Document>();
+
+    public DbSet<Tag> Tags => Set<Tag>();
+    public DbSet<MeetingTag> MeetingTags => Set<MeetingTag>();
+    public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<OrganizationUser> OrganizationUsers => Set<OrganizationUser>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
