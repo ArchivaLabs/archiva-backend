@@ -21,7 +21,7 @@ public class CurrentUser : IUser
     public string? OrganizationId =>
         _httpContextAccessor.HttpContext?.User?.FindFirstValue("OrganizationId");
 
-    public List<string>? Roles =>
+    public List<string>? Role =>
         _httpContextAccessor
             .HttpContext?.User?.FindAll(ClaimTypes.Role)
             .Select(x => x.Value)

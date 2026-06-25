@@ -25,4 +25,7 @@ public static class Services
     /// This is the name of the database that will be created and used by the application.
     /// </summary>
     public const string Database = "ArchivaDb";
+
+    public const string BlobStorage = "blobs";
+    public const string DocumentIntelligence = "document-intelligence";
 }
