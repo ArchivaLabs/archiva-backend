@@ -28,7 +28,7 @@ public class CreateMeetingCommandHandler : IRequestHandler<CreateMeetingCommand,
     public async Task<int> Handle(CreateMeetingCommand request, CancellationToken cancellationToken)
     {
         // Get the organization id from the authenticated user
-        var organizationId = Guid.Parse(_currentUser.OrganizationId!);
+        var organizationId = int.Parse(_currentUser.OrganizationId!);
 
         // Create the new meeting info.
         var meeting = new Meeting

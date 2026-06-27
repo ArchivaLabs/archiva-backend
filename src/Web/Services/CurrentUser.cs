@@ -13,11 +13,17 @@ public class CurrentUser : IUser
     }
 
     public string? Id =>
-        _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+        ?? _httpContextAccessor.HttpContext?.User?.FindFirstValue("oid");
 
-    public string? Name => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
+    public string? Name =>
+        _httpContextAccessor.HttpContext?.User?.FindFirstValue("name")
+        ?? _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
+
     public string? Email =>
-        _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email);
+        _httpContextAccessor.HttpContext?.User?.FindFirstValue("preferred_username")
+        ?? _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email);
+
     public string? OrganizationId =>
         _httpContextAccessor.HttpContext?.User?.FindFirstValue("OrganizationId");
 

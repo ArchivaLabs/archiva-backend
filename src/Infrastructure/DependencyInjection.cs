@@ -40,7 +40,7 @@ public static class DependencyInjection
             provider.GetRequiredService<ApplicationDbContext>()
         );
 
-        // builder.Services.AddScoped<ApplicationDbContextInitialiser>();
+        builder.Services.AddScoped<ApplicationDbContextInitialiser>();
 
         builder.Services.AddAuthentication().AddBearerToken(IdentityConstants.BearerScheme);
 

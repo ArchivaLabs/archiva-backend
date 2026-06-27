@@ -21,7 +21,7 @@ public class TodoListDto
     {
         public Mapping()
         {
-            CreateMap<TodoList, TodoListDto>();
+            // CreateMap<TodoList, TodoListDto>();
         }
     }
 }

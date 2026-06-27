@@ -20,6 +20,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
     public DbSet<MeetingTag> MeetingTags => Set<MeetingTag>();
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<OrganizationUser> OrganizationUsers => Set<OrganizationUser>();
+    public DbSet<UserInvitation> UserInvitations => Set<UserInvitation>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

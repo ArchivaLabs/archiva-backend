@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Archiva.AppHost</RootNamespace>
     <AssemblyName>Archiva.AppHost</AssemblyName>
+    <UserSecretsId>e7880c51-e76e-446b-9cce-bc7604d38b0e</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

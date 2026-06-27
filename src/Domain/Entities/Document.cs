@@ -9,7 +9,7 @@ public class Document : BaseAuditableEntity
     public long FileSizeInBytes { get; set; }
     public string? ExtractedText { get; set; }
     public string? Description { get; set; }
-    public Guid OrganizationId { get; set; }
+    public int OrganizationId { get; set; }
 
     // Foreign Keys
     public int MeetingId { get; set; }

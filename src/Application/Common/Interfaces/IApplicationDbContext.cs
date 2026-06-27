@@ -10,6 +10,7 @@ public interface IApplicationDbContext
     DbSet<MeetingTag> MeetingTags { get; }
     DbSet<Organization> Organizations { get; }
     DbSet<OrganizationUser> OrganizationUsers { get; }
+    DbSet<UserInvitation> UserInvitations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
