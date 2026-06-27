@@ -1,7 +1,5 @@
 using Archiva.Application.Common.Interfaces;
-using Archiva.Infrastructure.Data;
 using Archiva.Web.Services;
-using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Web;
@@ -43,15 +41,16 @@ public static class DependencyInjection
         builder.Services.AddCors();
     }
 
-    public static void AddKeyVaultIfConfigured(this IHostApplicationBuilder builder)
-    {
-        var keyVaultUri = builder.Configuration["AZURE_KEY_VAULT_ENDPOINT"];
-        if (!string.IsNullOrWhiteSpace(keyVaultUri))
-        {
-            builder.Configuration.AddAzureKeyVault(
-                new Uri(keyVaultUri),
-                new DefaultAzureCredential()
-            );
-        }
-    }
+    /// Would come back to set this up once it's time for deployment on Azure
+    // public static void AddKeyVaultIfConfigured(this IHostApplicationBuilder builder)
+    // {
+    //     var keyVaultUri = builder.Configuration["AZURE_KEY_VAULT_ENDPOINT"];
+    //     if (!string.IsNullOrWhiteSpace(keyVaultUri))
+    //     {
+    //         builder.Configuration.AddAzureKeyVault(
+    //             new Uri(keyVaultUri),
+    //             new DefaultAzureCredential()
+    //         );
+    //     }
+    // }
 }

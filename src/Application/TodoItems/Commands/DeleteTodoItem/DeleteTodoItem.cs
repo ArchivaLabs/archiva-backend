@@ -1,28 +1,26 @@
-﻿using Archiva.Application.Common.Interfaces;
+﻿// using Archiva.Application.Common.Interfaces;
 
-namespace Archiva.Application.TodoItems.Commands.DeleteTodoItem;
+// namespace Archiva.Application.TodoItems.Commands.DeleteTodoItem;
 
-public record DeleteTodoItemCommand(int Id) : IRequest;
+// public record DeleteTodoItemCommand(int Id) : IRequest;
 
-public class DeleteTodoItemCommandHandler : IRequestHandler<DeleteTodoItemCommand>
-{
-    private readonly IApplicationDbContext _context;
+// public class DeleteTodoItemCommandHandler : IRequestHandler<DeleteTodoItemCommand>
+// {
+//     private readonly IApplicationDbContext _context;
 
-    public DeleteTodoItemCommandHandler(IApplicationDbContext context)
-    {
-        _context = context;
-    }
+//     public DeleteTodoItemCommandHandler(IApplicationDbContext context)
+//     {
+//         _context = context;
+//     }
 
-    public async Task Handle(DeleteTodoItemCommand request, CancellationToken cancellationToken)
-    {
-        var entity = await _context.TodoItems
-            .FindAsync([request.Id], cancellationToken);
+//     public async Task Handle(DeleteTodoItemCommand request, CancellationToken cancellationToken)
+//     {
+//         var entity = await _context.TodoItems.FindAsync([request.Id], cancellationToken);
 
-        Guard.Against.NotFound(request.Id, entity);
+//         Guard.Against.NotFound(request.Id, entity);
 
-        _context.TodoItems.Remove(entity);
+//         _context.TodoItems.Remove(entity);
 
-        await _context.SaveChangesAsync(cancellationToken);
-    }
-
-}
+//         await _context.SaveChangesAsync(cancellationToken);
+//     }
+// }

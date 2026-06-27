@@ -16,7 +16,10 @@ public class Users : IEndpointGroup
 
     [EndpointSummary("Log out")]
     [EndpointDescription("Logs out the current user by clearing the authentication cookie.")]
-    public static async Task<Results<Ok, UnauthorizedHttpResult>> Logout(SignInManager<ApplicationUser> signInManager, [FromBody] object empty)
+    public static async Task<Results<Ok, UnauthorizedHttpResult>> Logout(
+        SignInManager<ApplicationUser> signInManager,
+        [FromBody] object empty
+    )
     {
         if (empty != null)
         {

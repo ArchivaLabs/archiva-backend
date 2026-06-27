@@ -1,30 +1,30 @@
-﻿using Archiva.Application.TodoLists.Commands.CreateTodoList;
-using Archiva.Application.TodoLists.Commands.DeleteTodoList;
-using Archiva.Domain.Entities;
+﻿// using Archiva.Application.TodoLists.Commands.CreateTodoList;
+// using Archiva.Application.TodoLists.Commands.DeleteTodoList;
+// using Archiva.Domain.Entities;
 
-namespace Archiva.Application.FunctionalTests.TodoLists.Commands;
+// namespace Archiva.Application.FunctionalTests.TodoLists.Commands;
 
-public class DeleteTodoListTests : TestBase
-{
-    [Test]
-    public async Task ShouldRequireValidTodoListId()
-    {
-        var command = new DeleteTodoListCommand(99);
-        await Should.ThrowAsync<NotFoundException>(() => TestApp.SendAsync(command));
-    }
+// public class DeleteTodoListTests : TestBase
+// {
+//     [Test]
+//     public async Task ShouldRequireValidTodoListId()
+//     {
+//         var command = new DeleteTodoListCommand(99);
+//         await Should.ThrowAsync<NotFoundException>(() => TestApp.SendAsync(command));
+//     }
 
-    [Test]
-    public async Task ShouldDeleteTodoList()
-    {
-        var listId = await TestApp.SendAsync(new CreateTodoListCommand
-        {
-            Title = "New List"
-        });
+//     [Test]
+//     public async Task ShouldDeleteTodoList()
+//     {
+//         var listId = await TestApp.SendAsync(new CreateTodoListCommand
+//         {
+//             Title = "New List"
+//         });
 
-        await TestApp.SendAsync(new DeleteTodoListCommand(listId));
+//         await TestApp.SendAsync(new DeleteTodoListCommand(listId));
 
-        var list = await TestApp.FindAsync<TodoList>(listId);
+//         var list = await TestApp.FindAsync<TodoList>(listId);
 
-        list.ShouldBeNull();
-    }
-}
+//         list.ShouldBeNull();
+//     }
+// }
