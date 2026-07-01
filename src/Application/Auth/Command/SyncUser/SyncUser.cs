@@ -6,6 +6,7 @@ namespace Archiva.Application.Auth.Command.SyncUser;
 
 public record SyncUserCommand : IRequest<SyncUserResult>
 {
+    public string UserId { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;
     public string Email { get; init; } = string.Empty;
     public string? AvatarUrl { get; init; }
@@ -15,6 +16,11 @@ public record SyncUserResult
 {
     public string Status { get; init; } = string.Empty;
     public int? OrganizationId { get; init; }
+    public string? DisplayName { get; init; }
+    public string? Email { get; init; }
+    public string? AvatarUrl { get; init; }
+    public string? OrganizationName { get; init; }
+    public string? OrganizationUrl { get; init; }
     public string? Role { get; init; }
     public string? UserId { get; init; }
 }
@@ -35,10 +41,9 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
     )
     {
         // Check if user already exists in the organization
-        var existingMember = await _context.OrganizationUsers.FirstOrDefaultAsync(
-            u => u.Email == request.Email,
-            cancellationToken
-        );
+        var existingMember = await _context
+            .OrganizationUsers.Include(u => u.Organization)
+            .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
         // If it's an existing user, log them in.
         if (existingMember is not null)
@@ -47,22 +52,30 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
             {
                 Status = "existing",
                 OrganizationId = existingMember.OrganizationId,
+                OrganizationName = existingMember.Organization.Name,
+                OrganizationUrl = existingMember.Organization.LogoUrl,
                 Role = existingMember.Role.ToString(),
                 UserId = existingMember.UserId,
+                DisplayName = existingMember.UserName,
+                AvatarUrl = existingMember.AvatarUrl,
+                Email = existingMember.Email,
             };
         }
 
         // Check if the user has a pending invitation
-        var invitation = await _context.UserInvitations.FirstOrDefaultAsync(
-            i => i.Email == request.Email && !i.IsAccepted && i.ExpiresAt > DateTime.UtcNow,
-            cancellationToken
-        );
+        var invitation = await _context
+            .UserInvitations.Include(i => i.Organization)
+            .FirstOrDefaultAsync(
+                i => i.Email == request.Email && !i.IsAccepted && i.ExpiresAt > DateTime.UtcNow,
+                cancellationToken
+            );
 
         // If the user has a pending invitation, invite them.
         if (invitation is not null)
         {
             var member = new OrganizationUser
             {
+                UserId = request.UserId,
                 Email = request.Email,
                 UserName = request.DisplayName,
                 AvatarUrl = request.AvatarUrl,
@@ -82,6 +95,11 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
                 OrganizationId = invitation.OrganizationId,
                 Role = UserRole.User.ToString(),
                 UserId = member.UserId,
+                DisplayName = request.DisplayName,
+                Email = request.Email,
+                AvatarUrl = request.AvatarUrl,
+                OrganizationName = invitation.Organization.Name,
+                OrganizationUrl = invitation.Organization.LogoUrl,
             };
         }
 

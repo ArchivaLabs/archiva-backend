@@ -24,8 +24,14 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
-app.UseCors(static builder => builder.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin());
+app.UseCors(policy =>
+    policy.WithOrigins("http://localhost:5173").AllowAnyHeader().AllowAnyMethod()
+);
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

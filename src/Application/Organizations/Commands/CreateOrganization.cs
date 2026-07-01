@@ -15,6 +15,8 @@ public record CreateOrganizationResult
     public int OrganizationId { get; init; }
     public string Role { get; init; } = string.Empty;
     public string UserId { get; init; } = string.Empty;
+    public string OrganizationName { get; init; } = string.Empty;
+    public string? OrganizationLogoUrl { get; init; }
 }
 
 // Handler
@@ -59,6 +61,8 @@ public class CreateOrganizationCommandHandler
             OrganizationId = newOrganization.Id,
             Role = UserRole.Admin.ToString(),
             UserId = _currentUser.Id!,
+            OrganizationName = newOrganization.Name,
+            OrganizationLogoUrl = newOrganization.LogoUrl,
         };
     }
 }
