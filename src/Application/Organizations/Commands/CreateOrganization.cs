@@ -26,6 +26,30 @@ public class CreateOrganizationCommandHandler
     private readonly IApplicationDbContext _context;
     private readonly IUser _currentUser;
 
+    // Default tags seeded for every now organization that is created.
+    private static readonly string[] DefaultTags =
+    [
+        "Finance",
+        "Legal",
+        "HR",
+        "Strategy",
+        "Compliance",
+        "Operations",
+        "IT",
+        "Procurement",
+        "Marketing",
+        "Executive",
+        "Senate",
+        "Faculty",
+        "Research",
+        "Audit",
+        "Academic",
+        "Governance",
+        "Admissions",
+        "Registry",
+        "Examinations",
+    ];
+
     public CreateOrganizationCommandHandler(IApplicationDbContext context, IUser currentUser)
     {
         _context = context;
@@ -54,6 +78,14 @@ public class CreateOrganizationCommandHandler
         };
 
         _context.OrganizationUsers.Add(member);
+
+        var defaultTags = DefaultTags.Select(name => new Tag
+        {
+            Name = name,
+            OrganizationId = newOrganization.Id,
+        });
+
+        _context.Tags.AddRange(defaultTags);
         await _context.SaveChangesAsync(cancellationToken);
 
         return new CreateOrganizationResult
