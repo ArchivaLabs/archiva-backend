@@ -1,4 +1,6 @@
 using Archiva.Application.Meetings.Commands.CreateMeeting;
+using Archiva.Application.Meetings.Queries;
+using Archiva.Application.Meetings.Queries.GetMeetingById;
 using Archiva.Application.Meetings.Queries.GetMeetings;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -13,6 +15,7 @@ public class Meetings : IEndpointGroup
         groupBuilder.RequireAuthorization();
         groupBuilder.MapPost(CreateMeetingHandler);
         groupBuilder.MapGet(GetMeetingsHandler, "/");
+        groupBuilder.MapGet(GetMeetingByIdHandler, "{id}");
     }
 
     [EndpointSummary("Create a new meeting")]
@@ -41,6 +44,17 @@ public class Meetings : IEndpointGroup
     )
     {
         var result = await sender.Send(query);
+        return TypedResults.Ok(result);
+    }
+
+    [EndpointSummary("Get meeting by ID")]
+    [EndpointDescription(
+        "Returns the full details of a meeting including its documents and tags. "
+            + "Returns 404 if the meeting does not exist or belongs to a different organisation."
+    )]
+    public static async Task<Ok<MeetingDetailDto>> GetMeetingByIdHandler(ISender sender, int id)
+    {
+        var result = await sender.Send(new GetMeetingByIdQuery { Id = id });
         return TypedResults.Ok(result);
     }
 }
