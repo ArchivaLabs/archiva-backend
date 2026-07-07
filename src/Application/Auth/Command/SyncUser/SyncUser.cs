@@ -43,7 +43,10 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
         // Check if user already exists in the organization
         var existingMember = await _context
             .OrganizationUsers.Include(u => u.Organization)
-            .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
+            .FirstOrDefaultAsync(
+                u => u.Email == request.Email || u.UserId == request.UserId,
+                cancellationToken
+            );
 
         // If it's an existing user, log them in.
         if (existingMember is not null)

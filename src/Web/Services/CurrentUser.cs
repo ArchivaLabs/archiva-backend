@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Archiva.Application.Common.Interfaces;
+using Microsoft.Identity.Web;
 
 namespace Archiva.Web.Services;
 
@@ -12,9 +13,7 @@ public class CurrentUser : IUser
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public string? Id =>
-        _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-        ?? _httpContextAccessor.HttpContext?.User?.FindFirstValue("oid");
+    public string? Id => _httpContextAccessor.HttpContext?.User?.GetObjectId();
 
     public string? Name =>
         _httpContextAccessor.HttpContext?.User?.FindFirstValue("name")
