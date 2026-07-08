@@ -21,6 +21,10 @@ public class CreateMeetingCommandValidator : AbstractValidator<CreateMeetingComm
             .WithMessage("Description must not exceed 1000 characters.")
             .When(x => x.Description is not null);
 
+        RuleFor(x => x.Location)
+            .MaximumLength(500)
+            .WithMessage("Loacation must not exceed 500 characters.");
+
         RuleFor(x => x.Tags)
             .Must(tags => tags.Count <= 10)
             .WithMessage("A meeting cannot have more than 10 tags.");

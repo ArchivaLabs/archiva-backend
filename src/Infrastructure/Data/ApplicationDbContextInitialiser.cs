@@ -69,8 +69,6 @@ public class ApplicationDbContextInitialiser
         await _context.SaveChangesAsync();
 
         // ── 2. Seed user (matches your real Microsoft account) ────────────
-        // Replace the values below with your actual oid, name, and email
-        // so the seeded meetings show your real name in the CreatedBy field.
         var seedUserId = "05ed33c5-59fb-4a79-9411-dbf5c701c2c2";
         var seedUserName = "Lansa ®";
         var seedEmail = "olamideiyanda18@gmail.com";
@@ -131,6 +129,7 @@ public class ApplicationDbContextInitialiser
             string? Description,
             DateTime Date,
             TimeSpan Time,
+            string? Location,
             string[] Tags
         )>
         {
@@ -139,6 +138,7 @@ public class ApplicationDbContextInitialiser
                 "Full senate session for Q3 review.",
                 DateTime.UtcNow.AddDays(-60),
                 new TimeSpan(10, 0, 0),
+                "Senate Chamber, Block A",
                 ["Senate", "Governance"]
             ),
             (
@@ -146,6 +146,7 @@ public class ApplicationDbContextInitialiser
                 "Annual budget allocation discussion.",
                 DateTime.UtcNow.AddDays(-57),
                 new TimeSpan(9, 0, 0),
+                "Finance Office, Room 201",
                 ["Finance", "Executive"]
             ),
             (
@@ -153,6 +154,7 @@ public class ApplicationDbContextInitialiser
                 "Review of academic programmes.",
                 DateTime.UtcNow.AddDays(-54),
                 new TimeSpan(11, 0, 0),
+                "Faculty Hall, Room 105",
                 ["Faculty", "Academic"]
             ),
             (
@@ -160,6 +162,7 @@ public class ApplicationDbContextInitialiser
                 "Assessment of campus network upgrade.",
                 DateTime.UtcNow.AddDays(-51),
                 new TimeSpan(14, 0, 0),
+                "ICT Centre, Server Room B",
                 ["IT", "Infrastructure"]
             ),
             (
@@ -167,6 +170,7 @@ public class ApplicationDbContextInitialiser
                 "Evaluation of submitted grant applications.",
                 DateTime.UtcNow.AddDays(-48),
                 new TimeSpan(10, 30, 0),
+                "Research Block, Conference Room 3",
                 ["Research", "Finance"]
             ),
             (
@@ -174,6 +178,7 @@ public class ApplicationDbContextInitialiser
                 "Student welfare and support services review.",
                 DateTime.UtcNow.AddDays(-45),
                 new TimeSpan(13, 0, 0),
+                "Student Union Building, Room 12",
                 ["Student Affairs", "Governance"]
             ),
             (
@@ -181,6 +186,7 @@ public class ApplicationDbContextInitialiser
                 "Update admission criteria for 2027 intake.",
                 DateTime.UtcNow.AddDays(-42),
                 new TimeSpan(9, 30, 0),
+                "Admissions Office, Room 4",
                 ["Admissions", "Strategy"]
             ),
             (
@@ -188,6 +194,7 @@ public class ApplicationDbContextInitialiser
                 "Internal audit of procurement processes.",
                 DateTime.UtcNow.AddDays(-39),
                 new TimeSpan(10, 0, 0),
+                "Audit Suite, Administration Block",
                 ["Procurement", "Audit"]
             ),
             (
@@ -195,6 +202,7 @@ public class ApplicationDbContextInitialiser
                 "Annual compliance training for staff.",
                 DateTime.UtcNow.AddDays(-36),
                 new TimeSpan(15, 0, 0),
+                "Law Faculty Seminar Room 2",
                 ["Legal", "Compliance"]
             ),
             (
@@ -202,6 +210,7 @@ public class ApplicationDbContextInitialiser
                 "Emergency council session on facilities.",
                 DateTime.UtcNow.AddDays(-33),
                 new TimeSpan(8, 0, 0),
+                "Council Chambers, Main Block",
                 ["Council", "Executive"]
             ),
             (
@@ -209,6 +218,7 @@ public class ApplicationDbContextInitialiser
                 "Review of updated HR policies and procedures.",
                 DateTime.UtcNow.AddDays(-30),
                 new TimeSpan(11, 0, 0),
+                "HR Department, Room 301",
                 ["HR", "Compliance"]
             ),
             (
@@ -216,6 +226,7 @@ public class ApplicationDbContextInitialiser
                 "Setting examination timetable and policies.",
                 DateTime.UtcNow.AddDays(-28),
                 new TimeSpan(10, 0, 0),
+                "Examinations Office, Block C",
                 ["Examinations", "Academic"]
             ),
             (
@@ -223,6 +234,7 @@ public class ApplicationDbContextInitialiser
                 "Progress update on records digitisation.",
                 DateTime.UtcNow.AddDays(-26),
                 new TimeSpan(14, 0, 0),
+                "Registry Department, Room 102",
                 ["Registry", "IT"]
             ),
             (
@@ -230,6 +242,7 @@ public class ApplicationDbContextInitialiser
                 "Planning university outreach campaigns.",
                 DateTime.UtcNow.AddDays(-24),
                 new TimeSpan(13, 30, 0),
+                "Communications Office, Room 205",
                 ["Marketing", "Strategy"]
             ),
             (
@@ -237,6 +250,7 @@ public class ApplicationDbContextInitialiser
                 "Quarterly operations performance review.",
                 DateTime.UtcNow.AddDays(-22),
                 new TimeSpan(9, 0, 0),
+                "Operations Centre, Block D",
                 ["Operations", "Executive"]
             ),
             (
@@ -244,6 +258,7 @@ public class ApplicationDbContextInitialiser
                 "Review of research ethics submissions.",
                 DateTime.UtcNow.AddDays(-20),
                 new TimeSpan(10, 0, 0),
+                "Research Block, Ethics Suite",
                 ["Research", "Governance"]
             ),
             (
@@ -251,6 +266,7 @@ public class ApplicationDbContextInitialiser
                 "External auditors presentation of findings.",
                 DateTime.UtcNow.AddDays(-18),
                 new TimeSpan(11, 0, 0),
+                "Finance Office, Boardroom",
                 ["Finance", "Audit"]
             ),
             (
@@ -258,6 +274,7 @@ public class ApplicationDbContextInitialiser
                 "Curriculum reform proposals review.",
                 DateTime.UtcNow.AddDays(-16),
                 new TimeSpan(10, 0, 0),
+                "Senate Chamber, Block A",
                 ["Senate", "Faculty", "Academic"]
             ),
             (
@@ -265,6 +282,7 @@ public class ApplicationDbContextInitialiser
                 "Cybersecurity threat landscape overview.",
                 DateTime.UtcNow.AddDays(-14),
                 new TimeSpan(14, 0, 0),
+                "ICT Centre, Briefing Room",
                 ["IT", "Compliance"]
             ),
             (
@@ -272,6 +290,7 @@ public class ApplicationDbContextInitialiser
                 "Meeting with student union representatives.",
                 DateTime.UtcNow.AddDays(-12),
                 new TimeSpan(15, 0, 0),
+                "Student Union Building, Main Hall",
                 ["Student Affairs", "Governance"]
             ),
             (
@@ -279,6 +298,7 @@ public class ApplicationDbContextInitialiser
                 "Five-year campus development strategy.",
                 DateTime.UtcNow.AddDays(-10),
                 new TimeSpan(9, 0, 0),
+                "Works Department, Planning Room",
                 ["Infrastructure", "Strategy"]
             ),
             (
@@ -286,6 +306,7 @@ public class ApplicationDbContextInitialiser
                 "Planning for new academic year hiring.",
                 DateTime.UtcNow.AddDays(-9),
                 new TimeSpan(10, 0, 0),
+                "HR Department, Room 302",
                 ["HR", "Faculty"]
             ),
             (
@@ -293,6 +314,7 @@ public class ApplicationDbContextInitialiser
                 "Review of pending legal matters.",
                 DateTime.UtcNow.AddDays(-8),
                 new TimeSpan(11, 0, 0),
+                "Legal Unit, Administration Block",
                 ["Legal", "Executive"]
             ),
             (
@@ -300,6 +322,7 @@ public class ApplicationDbContextInitialiser
                 "Vendor selection for lab equipment.",
                 DateTime.UtcNow.AddDays(-7),
                 new TimeSpan(13, 0, 0),
+                "Procurement Office, Room 108",
                 ["Procurement", "Finance"]
             ),
             (
@@ -307,6 +330,7 @@ public class ApplicationDbContextInitialiser
                 "Logistics for upcoming open day event.",
                 DateTime.UtcNow.AddDays(-6),
                 new TimeSpan(10, 0, 0),
+                "Admissions Office, Conference Room",
                 ["Admissions", "Marketing"]
             ),
             (
@@ -314,6 +338,7 @@ public class ApplicationDbContextInitialiser
                 "Annual research symposium preparations.",
                 DateTime.UtcNow.AddDays(-5),
                 new TimeSpan(14, 0, 0),
+                "Research Block, Symposium Hall",
                 ["Research", "Academic"]
             ),
             (
@@ -321,6 +346,7 @@ public class ApplicationDbContextInitialiser
                 "Final approval of annual university budget.",
                 DateTime.UtcNow.AddDays(-4),
                 new TimeSpan(9, 0, 0),
+                "Council Chambers, Main Block",
                 ["Council", "Finance", "Executive"]
             ),
             (
@@ -328,6 +354,7 @@ public class ApplicationDbContextInitialiser
                 "Ensuring student records compliance.",
                 DateTime.UtcNow.AddDays(-3),
                 new TimeSpan(11, 0, 0),
+                "Registry Department, Room 103",
                 ["Registry", "Compliance"]
             ),
             (
@@ -335,6 +362,7 @@ public class ApplicationDbContextInitialiser
                 "End of semester senate closing session.",
                 DateTime.UtcNow.AddDays(-2),
                 new TimeSpan(10, 0, 0),
+                "Senate Chamber, Block A",
                 ["Senate", "Governance"]
             ),
             (
@@ -342,11 +370,12 @@ public class ApplicationDbContextInitialiser
                 "Annual executive team strategy planning.",
                 DateTime.UtcNow.AddDays(-1),
                 new TimeSpan(9, 0, 0),
+                "Vice Chancellor's Conference Room",
                 ["Executive", "Strategy"]
             ),
         };
 
-        foreach (var (title, description, date, time, meetingTags) in seedMeetings)
+        foreach (var (title, description, date, time, location, meetingTags) in seedMeetings)
         {
             var meeting = new Meeting
             {
@@ -354,6 +383,7 @@ public class ApplicationDbContextInitialiser
                 Description = description,
                 MeetingDate = date,
                 MeetingTime = time,
+                Location = location,
                 OrganizationId = org.Id,
                 CreatedBy = seedUserName,
                 CreatedByAvatar = null,

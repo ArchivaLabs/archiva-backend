@@ -9,6 +9,7 @@ public record MeetingDetailDto
     public string? Description { get; init; }
     public DateTime MeetingDate { get; init; }
     public TimeSpan MeetingTime { get; init; }
+    public string? Location { get; init; }
     public string? CreatedBy { get; init; }
     public string? CreatedByAvatar { get; init; }
     public List<string> Tags { get; init; } = [];

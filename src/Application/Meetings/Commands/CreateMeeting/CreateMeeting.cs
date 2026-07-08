@@ -10,6 +10,7 @@ public record CreateMeetingCommand : IRequest<CreateMeetingResult>
     public string? Description { get; init; }
     public DateTime MeetingDate { get; init; }
     public TimeSpan MeetingTime { get; init; }
+    public string? Location { get; init; }
     public List<string> Tags { get; init; } = [];
 }
 
@@ -20,6 +21,7 @@ public record CreateMeetingResult
     public string? Description { get; init; }
     public DateTime MeetingDate { get; init; }
     public TimeSpan MeetingTime { get; init; }
+    public string? Location { get; init; }
     public int OrganizationId { get; init; }
     public List<string> Tags { get; init; } = [];
 }
@@ -90,6 +92,7 @@ public class CreateMeetingCommandHandler
             Description = request.Description,
             MeetingDate = request.MeetingDate,
             MeetingTime = request.MeetingTime,
+            Location = request.Location,
             OrganizationId = organizationId,
             CreatedByAvatar = member.AvatarUrl,
         };
@@ -113,6 +116,7 @@ public class CreateMeetingCommandHandler
             Description = meeting.Description,
             MeetingDate = meeting.MeetingDate,
             MeetingTime = meeting.MeetingTime,
+            Location = meeting.Location,
             OrganizationId = meeting.OrganizationId,
             Tags = allTags.Select(t => t.Name).ToList(),
         };
