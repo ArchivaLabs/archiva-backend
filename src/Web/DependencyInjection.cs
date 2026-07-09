@@ -1,5 +1,6 @@
 using Archiva.Application.Common.Interfaces;
 using Archiva.Web.Services;
+// using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Web;
@@ -39,6 +40,7 @@ public static class DependencyInjection
         });
 
         builder.Services.AddCors();
+        builder.Services.AddAntiforgery();
     }
 
     /// Would come back to set this up once it's time for deployment on Azure

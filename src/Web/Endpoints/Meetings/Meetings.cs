@@ -1,6 +1,5 @@
 using Archiva.Application.Meetings.Commands.CreateMeeting;
 using Archiva.Application.Meetings.Queries;
-using Archiva.Application.Meetings.Queries.GetMeetingById;
 using Archiva.Application.Meetings.Queries.GetMeetings;
 using Microsoft.AspNetCore.Http.HttpResults;
 

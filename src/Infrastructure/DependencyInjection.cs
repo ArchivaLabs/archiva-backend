@@ -2,6 +2,7 @@
 using Archiva.Infrastructure.Data;
 using Archiva.Infrastructure.Data.Interceptors;
 using Archiva.Infrastructure.Identity;
+using Archiva.Infrastructure.Storage;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -54,5 +55,8 @@ public static class DependencyInjection
 
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddTransient<IIdentityService, IdentityService>();
+
+        builder.AddAzureBlobServiceClient(Services.BlobStorage);
+        builder.Services.AddScoped<IStorageService, BlobStorageService>();
     }
 }

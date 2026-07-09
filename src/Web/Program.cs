@@ -35,6 +35,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseAntiforgery();
 
 app.UseFileServer();
 

@@ -1,4 +1,4 @@
-namespace Archiva.Application.Documents.Queries;
+namespace Archiva.Application.Documents.Dtos;
 
 public record DocumentDto
 {

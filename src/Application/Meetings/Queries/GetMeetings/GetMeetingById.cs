@@ -1,7 +1,8 @@
 using Archiva.Application.Common.Interfaces;
+using Archiva.Application.Documents.Dtos;
 using Archiva.Application.Documents.Queries;
 
-namespace Archiva.Application.Meetings.Queries.GetMeetingById;
+namespace Archiva.Application.Meetings.Queries.GetMeetings;
 
 public record GetMeetingByIdQuery : IRequest<MeetingDetailDto>
 {

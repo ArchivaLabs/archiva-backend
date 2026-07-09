@@ -1,3 +1,4 @@
+using Archiva.Application.Documents.Dtos;
 using Archiva.Application.Documents.Queries;
 
 namespace Archiva.Application.Meetings.Queries;
