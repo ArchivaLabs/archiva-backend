@@ -78,6 +78,11 @@ artifacts/
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
 
+# Azurite local emulator state
+__azurite_db_*.json
+__blobstorage__/
+__queuestorage__/
+
 # StyleCop
 StyleCopReport.xml
 

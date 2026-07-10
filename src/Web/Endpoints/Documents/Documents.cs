@@ -2,7 +2,6 @@ using Archiva.Application.Documents.Commands.UploadDocument;
 using Archiva.Application.Documents.Dtos;
 using Archiva.Application.Documents.Queries.GetDocuments;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.VisualBasic;
 
 namespace Archiva.Web.Endpoints.Documents;
 
@@ -35,6 +34,12 @@ public class Documents : IEndpointGroup
         return TypedResults.Ok(result);
     }
 
+    [EndpointSummary("Upload a document to a meeting")]
+    [EndpointDescription(
+        "Uploads a file to Azure Blob Storage and creates a document record "
+            + "linked to the specified meeting. "
+            + "Accepted formats: PDF, DOCX, XLSX, TXT. Maximum size: 10 MB."
+    )]
     public static async Task<Results<Ok<DocumentDto>, ValidationProblem>> UploadDocumentHandler(
         ISender sender,
         int meetingId,
