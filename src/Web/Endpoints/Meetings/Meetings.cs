@@ -1,4 +1,5 @@
 using Archiva.Application.Meetings.Commands.CreateMeeting;
+using Archiva.Application.Meetings.Commands.UpdateMeeting;
 using Archiva.Application.Meetings.Queries;
 using Archiva.Application.Meetings.Queries.GetMeetings;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -15,6 +16,7 @@ public class Meetings : IEndpointGroup
         groupBuilder.MapPost(CreateMeetingHandler);
         groupBuilder.MapGet(GetMeetingsHandler, "/");
         groupBuilder.MapGet(GetMeetingByIdHandler, "{id}");
+        groupBuilder.MapPut(UpdateMeetingHandler, "{id}");
     }
 
     [EndpointSummary("Create a new meeting")]
@@ -54,6 +56,25 @@ public class Meetings : IEndpointGroup
     public static async Task<Ok<MeetingDetailDto>> GetMeetingByIdHandler(ISender sender, int id)
     {
         var result = await sender.Send(new GetMeetingByIdQuery { Id = id });
+        return TypedResults.Ok(result);
+    }
+
+    [EndpointSummary("Update a meeting")]
+    [EndpointDescription(
+        "Updates the title, description, date, time, location and tags of an existing meeting. "
+            + "Tags are resolved by name — existing tags are reused, "
+            + "unrecognised tag names are created automatically. "
+            + "Returns 404 if the meeting does not exist or belongs to a different organisation."
+    )]
+    public static async Task<Ok<MeetingDetailDto>> UpdateMeetingHandler(
+        ISender sender,
+        int id,
+        UpdateMeetingCommand command
+    )
+    {
+        // The id comes from the route, the rest of the command from the request body.
+        // We merge them here so the handler has everything it needs.
+        var result = await sender.Send(command with { Id = id });
         return TypedResults.Ok(result);
     }
 }

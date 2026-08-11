@@ -6,7 +6,7 @@ public class Meeting : BaseAuditableEntity
     public string? Description { get; set; }
     public DateTime MeetingDate { get; set; }
     public TimeSpan MeetingTime { get; set; }
-    public string? Location { get; init; }
+    public string? Location { get; set; }
     public int OrganizationId { get; set; }
     public string? CreatedByAvatar { get; set; }
     public IList<MeetingTag> Tags { get; set; } = new List<MeetingTag>();

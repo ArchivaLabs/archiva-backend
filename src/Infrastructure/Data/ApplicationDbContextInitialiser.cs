@@ -1,5 +1,7 @@
 ﻿using Archiva.Domain.Entities;
 using Archiva.Domain.Enums;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -24,14 +26,17 @@ public class ApplicationDbContextInitialiser
 {
     private readonly ILogger<ApplicationDbContextInitialiser> _logger;
     private readonly ApplicationDbContext _context;
+    private readonly BlobServiceClient _blobServiceClient;
 
     public ApplicationDbContextInitialiser(
         ILogger<ApplicationDbContextInitialiser> logger,
-        ApplicationDbContext context
+        ApplicationDbContext context,
+        BlobServiceClient blobServiceClient
     )
     {
         _logger = logger;
         _context = context;
+        _blobServiceClient = blobServiceClient;
     }
 
     public async Task InitialiseAsync()
@@ -40,6 +45,24 @@ public class ApplicationDbContextInitialiser
         {
             await _context.Database.EnsureDeletedAsync();
             await _context.Database.EnsureCreatedAsync();
+
+            // Configure Azurite CORS so the frontend can fetch blobs directly.
+            // Azurite doesn't persist CORS rules across restarts so we reapply
+            // on every startup. In production this becomes a real Azure Storage
+            // CORS rule scoped to the deployed frontend origin.
+            var properties = await _blobServiceClient.GetPropertiesAsync();
+            properties.Value.Cors.Clear();
+            properties.Value.Cors.Add(
+                new BlobCorsRule
+                {
+                    AllowedOrigins = "http://localhost:5173",
+                    AllowedMethods = "GET,HEAD,OPTIONS",
+                    AllowedHeaders = "*",
+                    ExposedHeaders = "*",
+                    MaxAgeInSeconds = 3600,
+                }
+            );
+            await _blobServiceClient.SetPropertiesAsync(properties.Value);
         }
         catch (Exception ex)
         {
