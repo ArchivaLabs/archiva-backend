@@ -9,12 +9,12 @@ public record GetDocumentQuery : IRequest<List<DocumentDto>>
     public int MeetingId { get; init; }
 }
 
-public class GetDocumentsQueryHandler : IRequestHandler<GetDocumentQuery, List<DocumentDto>>
+public class GetDocumentQueryHandler : IRequestHandler<GetDocumentQuery, List<DocumentDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly IUser _currentUser;
 
-    public GetDocumentsQueryHandler(IApplicationDbContext context, IUser currentUser)
+    public GetDocumentQueryHandler(IApplicationDbContext context, IUser currentUser)
     {
         _context = context;
         _currentUser = currentUser;
