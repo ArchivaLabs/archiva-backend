@@ -1,4 +1,5 @@
 using Archiva.Application.Meetings.Commands.CreateMeeting;
+using Archiva.Application.Meetings.Commands.DeleteMeeting;
 using Archiva.Application.Meetings.Commands.UpdateMeeting;
 using Archiva.Application.Meetings.Queries;
 using Archiva.Application.Meetings.Queries.GetMeetings;
@@ -17,6 +18,7 @@ public class Meetings : IEndpointGroup
         groupBuilder.MapGet(GetMeetingsHandler, "/");
         groupBuilder.MapGet(GetMeetingByIdHandler, "{id}");
         groupBuilder.MapPut(UpdateMeetingHandler, "{id}");
+        groupBuilder.MapDelete(DeleteMeetingHandler, "{id}");
     }
 
     [EndpointSummary("Create a new meeting")]
@@ -76,5 +78,17 @@ public class Meetings : IEndpointGroup
         // We merge them here so the handler has everything it needs.
         var result = await sender.Send(command with { Id = id });
         return TypedResults.Ok(result);
+    }
+
+    [EndpointSummary("Delete a meeting")]
+    [EndpointDescription(
+        "Permanently deletes a meeting and all its associated documents from both "
+            + "the database and Azure Blob Storage. "
+            + "Returns 404 if the meeting does not exist or belongs to a different organisation."
+    )]
+    public static async Task<NoContent> DeleteMeetingHandler(ISender sender, int id)
+    {
+        await sender.Send(new DeleteMeetingCommand { Id = id });
+        return TypedResults.NoContent();
     }
 }
