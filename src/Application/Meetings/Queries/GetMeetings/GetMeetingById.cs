@@ -44,6 +44,7 @@ public class GetMeetingByIdQueryHandler : IRequestHandler<GetMeetingByIdQuery, M
                     Description = m.Description,
                     MeetingDate = m.MeetingDate,
                     MeetingTime = m.MeetingTime,
+                    Location = m.Location,
                     CreatedBy = m.CreatedBy,
                     CreatedByAvatar = m.CreatedByAvatar,
                     Tags = m.Tags.Select(mt => mt.Tag.Name).ToList(),
