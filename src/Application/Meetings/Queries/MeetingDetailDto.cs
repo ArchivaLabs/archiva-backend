@@ -13,6 +13,8 @@ public record MeetingDetailDto
     public string? Location { get; init; }
     public string? CreatedBy { get; init; }
     public string? CreatedByAvatar { get; init; }
+    public string? CreatedById { get; init; }
+    public bool CanDelete { get; init; }
     public List<string> Tags { get; init; } = [];
     public List<DocumentDto> Documents { get; init; } = [];
     public DateTimeOffset Created { get; init; }

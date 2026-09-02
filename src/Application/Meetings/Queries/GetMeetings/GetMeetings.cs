@@ -1,4 +1,5 @@
 using Archiva.Application.Common.Interfaces;
+using Archiva.Domain.Enums;
 
 namespace Archiva.Application.Meetings.Queries.GetMeetings;
 
@@ -59,6 +60,8 @@ public class GetMeetingsQueryHandler : IRequestHandler<GetMeetingsQuery, GetMeet
         var totalCount = await query.CountAsync(cancellationToken);
         var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
+        var isAdmin = member.Role == UserRole.Admin;
+
         var meetings = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -72,6 +75,8 @@ public class GetMeetingsQueryHandler : IRequestHandler<GetMeetingsQuery, GetMeet
                 Location = m.Location,
                 CreatedBy = m.CreatedBy,
                 CreatedByAvatar = m.CreatedByAvatar,
+                CreatedById = m.CreatedById,
+                CanDelete = isAdmin || m.CreatedBy == member.UserId,
                 Tags = m.Tags.Select(mt => mt.Tag.Name).ToList(),
                 DocumentCount = m.Documents.Count,
                 Created = m.Created,

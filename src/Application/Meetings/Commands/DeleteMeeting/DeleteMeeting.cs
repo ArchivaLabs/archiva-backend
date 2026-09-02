@@ -1,5 +1,7 @@
+using Archiva.Application.Common.Exceptions;
 using Archiva.Application.Common.Interfaces;
 using Archiva.Domain.Entities;
+using Archiva.Domain.Enums;
 
 namespace Archiva.Application.Meetings.Commands.DeleteMeeting;
 
@@ -45,6 +47,9 @@ public class DeleteMeetingCommandHandler : IRequestHandler<DeleteMeetingCommand>
                     cancellationToken
                 )
             ?? throw new NotFoundException(request.Id.ToString(), nameof(Meeting));
+
+        if (member.Role != UserRole.Admin && meeting.CreatedById != member.UserId)
+            throw new ForbiddenAccessException();
 
         // Delete each document's blob from storage first.
         // We do this before removing DB records so if a blob deletion fails

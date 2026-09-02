@@ -1,6 +1,7 @@
 using Archiva.Application.Common.Interfaces;
 using Archiva.Application.Documents.Dtos;
 using Archiva.Application.Documents.Queries;
+using Archiva.Domain.Enums;
 
 namespace Archiva.Application.Meetings.Queries.GetMeetings;
 
@@ -32,6 +33,8 @@ public class GetMeetingByIdQueryHandler : IRequestHandler<GetMeetingByIdQuery, M
             )
             ?? throw new UnauthorizedAccessException("Users is not a member of any organization.");
 
+        var isAdmin = member.Role == UserRole.Admin;
+
         var meeting =
             await _context
                 .Meetings.Where(m =>
@@ -47,6 +50,8 @@ public class GetMeetingByIdQueryHandler : IRequestHandler<GetMeetingByIdQuery, M
                     Location = m.Location,
                     CreatedBy = m.CreatedBy,
                     CreatedByAvatar = m.CreatedByAvatar,
+                    CreatedById = m.CreatedById,
+                    CanDelete = isAdmin || m.CreatedBy == member.UserId,
                     Tags = m.Tags.Select(mt => mt.Tag.Name).ToList(),
                     Documents = m
                         .Documents.Select(d => new DocumentDto

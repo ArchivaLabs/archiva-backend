@@ -410,6 +410,7 @@ public class ApplicationDbContextInitialiser
                 OrganizationId = org.Id,
                 CreatedBy = seedUserName,
                 CreatedByAvatar = null,
+                CreatedById = seedUserId,
             };
             _context.Meetings.Add(meeting);
             await _context.SaveChangesAsync();

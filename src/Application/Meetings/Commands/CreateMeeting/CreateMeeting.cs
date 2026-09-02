@@ -95,6 +95,7 @@ public class CreateMeetingCommandHandler
             Location = request.Location,
             OrganizationId = organizationId,
             CreatedByAvatar = member.AvatarUrl,
+            CreatedById = _currentUser.Id,
         };
 
         // Add the newly created meeting to the Meeting Table on the db.
