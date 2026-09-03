@@ -12,17 +12,12 @@ var databaseServer = builder
 // Azure Blob Storage
 var storage = builder.AddAzureStorage("storage").RunAsEmulator().AddBlobs(Services.BlobStorage);
 
-// Adding the Document Intelligence
-var documentIntelligence = builder.AddConnectionString(Services.DocumentIntelligence);
-
 var web = builder
     .AddProject<Projects.Web>(Services.WebApi)
     .WithReference(databaseServer)
     .WaitFor(databaseServer)
     .WithReference(storage)
-    .WithReference(documentIntelligence)
     .WithExternalHttpEndpoints()
-    .WithAspNetCoreEnvironment()
     .WithUrlForEndpoint(
         "http",
         url =>

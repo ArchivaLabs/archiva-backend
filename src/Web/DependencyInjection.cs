@@ -35,24 +35,10 @@ public static class DependencyInjection
         builder.Services.AddOpenApi(options =>
         {
             options.AddOperationTransformer<ApiExceptionOperationTransformer>();
-            options.AddOperationTransformer<IdentityApiOperationTransformer>();
             options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
         });
 
         builder.Services.AddCors();
         builder.Services.AddAntiforgery();
     }
-
-    /// Would come back to set this up once it's time for deployment on Azure
-    // public static void AddKeyVaultIfConfigured(this IHostApplicationBuilder builder)
-    // {
-    //     var keyVaultUri = builder.Configuration["AZURE_KEY_VAULT_ENDPOINT"];
-    //     if (!string.IsNullOrWhiteSpace(keyVaultUri))
-    //     {
-    //         builder.Configuration.AddAzureKeyVault(
-    //             new Uri(keyVaultUri),
-    //             new DefaultAzureCredential()
-    //         );
-    //     }
-    // }
 }

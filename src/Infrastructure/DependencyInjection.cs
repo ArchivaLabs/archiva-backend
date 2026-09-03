@@ -1,9 +1,8 @@
 ﻿using Archiva.Application.Common.Interfaces;
 using Archiva.Infrastructure.Data;
 using Archiva.Infrastructure.Data.Interceptors;
-using Archiva.Infrastructure.Identity;
 using Archiva.Infrastructure.Storage;
-using Microsoft.AspNetCore.Identity;
+using Archiva.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -29,9 +28,9 @@ public static class DependencyInjection
             {
                 options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
                 options.UseSqlServer(connectionString);
-                options.ConfigureWarnings(warnings =>
-                    warnings.Ignore(RelationalEventId.PendingModelChangesWarning)
-                );
+                // options.ConfigureWarnings(warnings =>
+                //     warnings.Ignore(RelationalEventId.PendingModelChangesWarning)
+                // );
             }
         );
 
@@ -43,18 +42,7 @@ public static class DependencyInjection
 
         builder.Services.AddScoped<ApplicationDbContextInitialiser>();
 
-        builder.Services.AddAuthentication().AddBearerToken(IdentityConstants.BearerScheme);
-
-        builder.Services.AddAuthorizationBuilder();
-
-        builder
-            .Services.AddIdentityCore<ApplicationUser>()
-            .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<ApplicationDbContext>()
-            .AddApiEndpoints();
-
         builder.Services.AddSingleton(TimeProvider.System);
-        builder.Services.AddTransient<IIdentityService, IdentityService>();
 
         builder.AddAzureBlobServiceClient(Services.BlobStorage);
         builder.Services.AddScoped<IStorageService, BlobStorageService>();

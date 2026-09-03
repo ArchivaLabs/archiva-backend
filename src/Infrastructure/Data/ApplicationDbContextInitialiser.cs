@@ -3,7 +3,10 @@ using Archiva.Domain.Enums;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Archiva.Infrastructure.Data;
@@ -27,24 +30,38 @@ public class ApplicationDbContextInitialiser
     private readonly ILogger<ApplicationDbContextInitialiser> _logger;
     private readonly ApplicationDbContext _context;
     private readonly BlobServiceClient _blobServiceClient;
+    private readonly IWebHostEnvironment _env;
 
     public ApplicationDbContextInitialiser(
         ILogger<ApplicationDbContextInitialiser> logger,
         ApplicationDbContext context,
-        BlobServiceClient blobServiceClient
+        BlobServiceClient blobServiceClient,
+        IWebHostEnvironment env
     )
     {
         _logger = logger;
         _context = context;
         _blobServiceClient = blobServiceClient;
+        _env = env;
     }
 
     public async Task InitialiseAsync()
     {
         try
         {
-            await _context.Database.EnsureDeletedAsync();
-            await _context.Database.EnsureCreatedAsync();
+            // Guard: if this is ever called outside Development (e.g. a future
+            // misconfigured call site), fail loudly rather than running migrations
+            // against production data silently.
+            if (!_env.IsDevelopment())
+            {
+                throw new InvalidOperationException(
+                    "InitialiseDatabaseAsync must not be called outside the Development environment."
+                );
+            }
+
+            // Apply any pending migrations — this replaces EnsureDeleted + EnsureCreated.
+            // Run dotnet ef database drop + restart AppHost for a clean slate locally.
+            await _context.Database.MigrateAsync();
 
             // Configure Azurite CORS so the frontend can fetch blobs directly.
             // Azurite doesn't persist CORS rules across restarts so we reapply
@@ -86,6 +103,11 @@ public class ApplicationDbContextInitialiser
 
     public async Task TrySeedAsync()
     {
+        // Idempotency guard — if the org already exists, everything else does too.
+        // This means restarts after the first run are instant and data is preserved.
+        if (await _context.Organizations.AnyAsync())
+            return;
+
         // ── 1. Organisation ───────────────────────────────────────────────
         var org = new Organization { Name = "University of Abuja", LogoUrl = null };
         _context.Organizations.Add(org);
