@@ -1,0 +1,12 @@
+using './webapi-containerapp.module.bicep'
+
+param aca_env_outputs_azure_container_apps_environment_default_domain = '{{ .Env.ACA_ENV_AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN }}'
+param aca_env_outputs_azure_container_apps_environment_id = '{{ .Env.ACA_ENV_AZURE_CONTAINER_APPS_ENVIRONMENT_ID }}'
+param aca_env_outputs_azure_container_registry_endpoint = '{{ .Env.ACA_ENV_AZURE_CONTAINER_REGISTRY_ENDPOINT }}'
+param aca_env_outputs_azure_container_registry_managed_identity_id = '{{ .Env.ACA_ENV_AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}'
+param dbserver_outputs_sqlserverfqdn = '{{ .Env.DBSERVER_SQLSERVERFQDN }}'
+param storage_outputs_blobendpoint = '{{ .Env.STORAGE_BLOBENDPOINT }}'
+param webapi_containerimage = '{{ .Image }}'
+param webapi_containerport = '{{ targetPortOrDefault 8080 }}'
+param webapi_identity_outputs_clientid = '{{ .Env.WEBAPI_IDENTITY_CLIENTID }}'
+param webapi_identity_outputs_id = '{{ .Env.WEBAPI_IDENTITY_ID }}'
