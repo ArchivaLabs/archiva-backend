@@ -11,7 +11,11 @@ public static class DependencyInjection
 {
     public static void AddWebServices(this IHostApplicationBuilder builder)
     {
-        builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+        // Phase 1.5 — dev-only diagnostic page, not needed in production.
+        if (builder.Environment.IsDevelopment())
+        {
+            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+        }
 
         builder.Services.AddScoped<IUser, CurrentUser>();
 

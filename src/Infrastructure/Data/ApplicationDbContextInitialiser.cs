@@ -5,6 +5,7 @@ using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -23,6 +24,16 @@ public static class InitialiserExtensions
         await initialiser.InitialiseAsync();
         await initialiser.SeedAsync();
     }
+
+    public static async Task ConfigureStorageAsync(this WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+
+        var initialiser =
+            scope.ServiceProvider.GetRequiredService<ApplicationDbContextInitialiser>();
+
+        await initialiser.ConfigureBlobCorsAsync();
+    }
 }
 
 public class ApplicationDbContextInitialiser
@@ -31,27 +42,29 @@ public class ApplicationDbContextInitialiser
     private readonly ApplicationDbContext _context;
     private readonly BlobServiceClient _blobServiceClient;
     private readonly IWebHostEnvironment _env;
+    private readonly IConfiguration _configuration;
 
     public ApplicationDbContextInitialiser(
         ILogger<ApplicationDbContextInitialiser> logger,
         ApplicationDbContext context,
         BlobServiceClient blobServiceClient,
-        IWebHostEnvironment env
+        IWebHostEnvironment env,
+        IConfiguration configuration
     )
     {
         _logger = logger;
         _context = context;
         _blobServiceClient = blobServiceClient;
         _env = env;
+        _configuration = configuration;
     }
 
     public async Task InitialiseAsync()
     {
         try
         {
-            // Guard: if this is ever called outside Development (e.g. a future
-            // misconfigured call site), fail loudly rather than running migrations
-            // against production data silently.
+            // Guard: fail loudly if called outside Development so this path
+            // can never accidentally run against production data.
             if (!_env.IsDevelopment())
             {
                 throw new InvalidOperationException(
@@ -59,31 +72,55 @@ public class ApplicationDbContextInitialiser
                 );
             }
 
-            // Apply any pending migrations — this replaces EnsureDeleted + EnsureCreated.
+            // Apply any pending migrations.
             // Run dotnet ef database drop + restart AppHost for a clean slate locally.
             await _context.Database.MigrateAsync();
-
-            // Configure Azurite CORS so the frontend can fetch blobs directly.
-            // Azurite doesn't persist CORS rules across restarts so we reapply
-            // on every startup. In production this becomes a real Azure Storage
-            // CORS rule scoped to the deployed frontend origin.
-            var properties = await _blobServiceClient.GetPropertiesAsync();
-            properties.Value.Cors.Clear();
-            properties.Value.Cors.Add(
-                new BlobCorsRule
-                {
-                    AllowedOrigins = "http://localhost:5173",
-                    AllowedMethods = "GET,HEAD,OPTIONS",
-                    AllowedHeaders = "*",
-                    ExposedHeaders = "*",
-                    MaxAgeInSeconds = 3600,
-                }
-            );
-            await _blobServiceClient.SetPropertiesAsync(properties.Value);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while initialising the database.");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Configures blob storage CORS rules so the frontend can fetch blobs
+    /// directly from storage cross-origin. Called in ALL environments:
+    /// - Dev: Azurite doesn't persist CORS rules across restarts
+    /// - Prod: Azure Storage needs the rule so the SPA origin is allowed
+    /// Origins are read from AllowedOrigins config so dev and prod differ
+    /// without code changes.
+    /// </summary>
+    public async Task ConfigureBlobCorsAsync()
+    {
+        try
+        {
+            var allowedOrigins =
+                _configuration.GetSection("AllowedOrigins").Get<string[]>()
+                ?? ["http://localhost:5173"];
+
+            var properties = await _blobServiceClient.GetPropertiesAsync();
+            properties.Value.Cors.Clear();
+
+            foreach (var origin in allowedOrigins)
+            {
+                properties.Value.Cors.Add(
+                    new BlobCorsRule
+                    {
+                        AllowedOrigins = origin,
+                        AllowedMethods = "GET,HEAD,OPTIONS",
+                        AllowedHeaders = "*",
+                        ExposedHeaders = "*",
+                        MaxAgeInSeconds = 3600,
+                    }
+                );
+            }
+
+            await _blobServiceClient.SetPropertiesAsync(properties.Value);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while configuring blob storage CORS.");
             throw;
         }
     }
@@ -104,7 +141,6 @@ public class ApplicationDbContextInitialiser
     public async Task TrySeedAsync()
     {
         // Idempotency guard — if the org already exists, everything else does too.
-        // This means restarts after the first run are instant and data is preserved.
         if (await _context.Organizations.AnyAsync())
             return;
 
@@ -113,7 +149,7 @@ public class ApplicationDbContextInitialiser
         _context.Organizations.Add(org);
         await _context.SaveChangesAsync();
 
-        // ── 2. Seed user (matches your real Microsoft account) ────────────
+        // ── 2. Seed user ──────────────────────────────────────────────────
         var seedUserId = "05ed33c5-59fb-4a79-9411-dbf5c701c2c2";
         var seedUserName = "Lansa ®";
         var seedEmail = "olamideiyanda18@gmail.com";
