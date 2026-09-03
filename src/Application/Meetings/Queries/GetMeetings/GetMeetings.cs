@@ -20,7 +20,6 @@ public record GetMeetingsResult
     public bool HasPreviousPage { get; init; }
 }
 
-// Handler
 public class GetMeetingsQueryHandler : IRequestHandler<GetMeetingsQuery, GetMeetingsResult>
 {
     private const int MaxPageSize = 50;
@@ -33,13 +32,11 @@ public class GetMeetingsQueryHandler : IRequestHandler<GetMeetingsQuery, GetMeet
         _currentUser = currentUser;
     }
 
-    // Handle Method
     public async Task<GetMeetingsResult> Handle(
         GetMeetingsQuery request,
         CancellationToken cancellationToken
     )
     {
-        // Get the user organization from OrganizationUsers
         var member =
             await _context.OrganizationUsers.FirstOrDefaultAsync(
                 u => u.UserId == _currentUser.Id,
@@ -47,8 +44,6 @@ public class GetMeetingsQueryHandler : IRequestHandler<GetMeetingsQuery, GetMeet
             ) ?? throw new UnauthorizedAccessException("User is not a member of any organization");
 
         var organizationId = member.OrganizationId;
-
-        // Clamp pageSize between 1 and MaxPageSize regardless of the amount requested.
         var pageSize = Math.Clamp(request.PageSize ?? 10, 1, MaxPageSize);
         var page = Math.Max(request.Page ?? 1, 1);
 
@@ -76,7 +71,7 @@ public class GetMeetingsQueryHandler : IRequestHandler<GetMeetingsQuery, GetMeet
                 CreatedBy = m.CreatedBy,
                 CreatedByAvatar = m.CreatedByAvatar,
                 CreatedById = m.CreatedById,
-                CanDelete = isAdmin || m.CreatedBy == member.UserId,
+                CanDelete = isAdmin || m.CreatedById == member.UserId,
                 Tags = m.Tags.Select(mt => mt.Tag.Name).ToList(),
                 DocumentCount = m.Documents.Count,
                 Created = m.Created,

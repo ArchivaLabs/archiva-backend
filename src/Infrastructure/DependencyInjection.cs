@@ -28,9 +28,6 @@ public static class DependencyInjection
             {
                 options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
                 options.UseSqlServer(connectionString);
-                // options.ConfigureWarnings(warnings =>
-                //     warnings.Ignore(RelationalEventId.PendingModelChangesWarning)
-                // );
             }
         );
 
@@ -44,7 +41,14 @@ public static class DependencyInjection
 
         builder.Services.AddSingleton(TimeProvider.System);
 
+        // BlobServiceClient is registered by AddAzureBlobServiceClient and injected
+        // into both BlobStorageService (scoped) and UserDelegationKeyProvider (singleton).
         builder.AddAzureBlobServiceClient(Services.BlobStorage);
+
+        // Singleton: caches the Azure user delegation key across requests.
+        // Must be singleton because BlobStorageService is scoped and cannot
+        // hold cross-request state itself.
+        builder.Services.AddSingleton<UserDelegationKeyProvider>();
         builder.Services.AddScoped<IStorageService, BlobStorageService>();
     }
 }

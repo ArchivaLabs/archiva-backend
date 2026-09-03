@@ -1,6 +1,5 @@
 using Archiva.Application.Common.Interfaces;
 using Archiva.Application.Documents.Dtos;
-using Archiva.Application.Documents.Queries;
 using Archiva.Domain.Entities;
 
 namespace Archiva.Application.Documents.Commands.UploadDocument;
@@ -32,43 +31,38 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
         _currentUser = currentUser;
     }
 
-    // Handle
     public async Task<DocumentDto> Handle(
         UploadDocumentCommand request,
         CancellationToken cancellationToken
     )
     {
-        // Look up the organization
         var member =
             await _context.OrganizationUsers.FirstOrDefaultAsync(
                 u => u.UserId == _currentUser.Id,
                 cancellationToken
             ) ?? throw new UnauthorizedAccessException("User is not a member of any organization");
 
-        // Confirm the meeting exists and belongs to the organization
         var meeting =
             await _context.Meetings.FirstOrDefaultAsync(
                 m => m.Id == request.MeetingId && m.OrganizationId == member.OrganizationId,
                 cancellationToken
             ) ?? throw new NotFoundException(request.MeetingId.ToString(), nameof(Meeting));
 
-        // Derive the file type from the extension.
         var fileType = Path.GetExtension(request.FileName).TrimStart('.').ToUpperInvariant();
 
-        // Uplead to the blob storage
-        var (blobUrl, blobName) = await _storageService.UploadAsync(
+        // UploadAsync now returns only the blob name — not a URL.
+        var blobName = await _storageService.UploadAsync(
             request.FileStream,
             request.FileName,
             request.ContentType,
             cancellationToken
         );
 
-        // Save the document record
         var document = new Document
         {
             FileName = request.FileName,
-            BlobUrl = blobUrl,
-            BlobName = blobName,
+            BlobUrl = blobName, // Store the blob name in BlobUrl for now;
+            BlobName = blobName, // BlobName is the canonical reference used for deletes/SAS.
             FileType = fileType,
             FileSizeInBytes = request.FileSizeInBytes,
             Description = request.Description,
@@ -79,13 +73,17 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
         _context.Documents.Add(document);
         await _context.SaveChangesAsync(cancellationToken);
 
+        // Mint a fresh SAS URL for the response — the client gets a
+        // short-lived signed URL, never a permanent public blob URL.
+        var sasUrl = await _storageService.GetReadUrlAsync(blobName, cancellationToken);
+
         return new DocumentDto
         {
             Id = document.Id,
             FileName = document.FileName,
             FileType = document.FileType,
             FileSizeInBytes = document.FileSizeInBytes,
-            BlobUrl = document.BlobUrl,
+            BlobUrl = sasUrl,
             Description = document.Description,
             UploadedBy = _currentUser.Name,
             Created = document.Created,

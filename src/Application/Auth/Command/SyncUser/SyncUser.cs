@@ -4,13 +4,10 @@ using Archiva.Domain.Enums;
 
 namespace Archiva.Application.Auth.Command.SyncUser;
 
-public record SyncUserCommand : IRequest<SyncUserResult>
-{
-    public string UserId { get; init; } = string.Empty;
-    public string DisplayName { get; init; } = string.Empty;
-    public string Email { get; init; } = string.Empty;
-    public string? AvatarUrl { get; init; }
-}
+// Empty command — all identity fields come from the validated JWT via IUser,
+// not from the request body. This closes the org-membership enumeration oracle
+// and the caller-supplied UserId injection vulnerability.
+public record SyncUserCommand : IRequest<SyncUserResult>;
 
 public record SyncUserResult
 {
@@ -29,10 +26,12 @@ public record SyncUserResult
 public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserResult>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IUser _currentUser;
 
-    public SyncUserCommandHandler(IApplicationDbContext context)
+    public SyncUserCommandHandler(IApplicationDbContext context, IUser currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<SyncUserResult> Handle(
@@ -40,15 +39,18 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
         CancellationToken cancellationToken
     )
     {
-        // Check if user already exists in the organization
+        // All identity fields come from the validated Microsoft JWT — not the
+        // request body. An unauthenticated caller cannot supply a fake userId
+        // or email because they would fail JWT validation before reaching here.
+        var userId = _currentUser.Id!;
+        var email = _currentUser.Email!;
+        var displayName = _currentUser.Name ?? string.Empty;
+
+        // Check if user already exists in the organisation
         var existingMember = await _context
             .OrganizationUsers.Include(u => u.Organization)
-            .FirstOrDefaultAsync(
-                u => u.Email == request.Email || u.UserId == request.UserId,
-                cancellationToken
-            );
+            .FirstOrDefaultAsync(u => u.Email == email || u.UserId == userId, cancellationToken);
 
-        // If it's an existing user, log them in.
         if (existingMember is not null)
         {
             return new SyncUserResult
@@ -69,19 +71,18 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
         var invitation = await _context
             .UserInvitations.Include(i => i.Organization)
             .FirstOrDefaultAsync(
-                i => i.Email == request.Email && !i.IsAccepted && i.ExpiresAt > DateTime.UtcNow,
+                i => i.Email == email && !i.IsAccepted && i.ExpiresAt > DateTime.UtcNow,
                 cancellationToken
             );
 
-        // If the user has a pending invitation, invite them.
         if (invitation is not null)
         {
             var member = new OrganizationUser
             {
-                UserId = request.UserId,
-                Email = request.Email,
-                UserName = request.DisplayName,
-                AvatarUrl = request.AvatarUrl,
+                UserId = userId,
+                Email = email,
+                UserName = displayName,
+                AvatarUrl = null, // Microsoft Graph photo not fetched at this stage
                 OrganizationId = invitation.OrganizationId,
                 Organization = invitation.Organization,
                 Role = invitation.Role,
@@ -98,15 +99,15 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
                 OrganizationId = invitation.OrganizationId,
                 Role = UserRole.User.ToString(),
                 UserId = member.UserId,
-                DisplayName = request.DisplayName,
-                Email = request.Email,
-                AvatarUrl = request.AvatarUrl,
+                DisplayName = displayName,
+                Email = email,
+                AvatarUrl = null,
                 OrganizationName = invitation.Organization.Name,
                 OrganizationUrl = invitation.Organization.LogoUrl,
             };
         }
 
-        // If the user is a brand new user, they would need to create their organization.
+        // Brand new user — needs to create their organisation.
         return new SyncUserResult { Status = "new" };
     }
 }
