@@ -120,8 +120,11 @@ public class ApplicationDbContextInitialiser
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An error occurred while configuring blob storage CORS.");
-            throw;
+            // Log but don't throw — storage CORS failure should not crash the app
+            _logger.LogWarning(
+                ex,
+                "Failed to configure blob storage CORS. The app will continue without it."
+            );
         }
     }
 

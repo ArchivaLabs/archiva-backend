@@ -59,14 +59,6 @@ resource aca_env 'Microsoft.App/managedEnvironments@2025-07-01' = {
   tags: tags
 }
 
-resource aspireDashboard 'Microsoft.App/managedEnvironments/dotNetComponents@2025-10-02-preview' = {
-  name: 'aspire-dashboard'
-  properties: {
-    componentType: 'AspireDashboard'
-  }
-  parent: aca_env
-}
-
 output AZURE_LOG_ANALYTICS_WORKSPACE_NAME string = aca_env_law.name
 
 output AZURE_LOG_ANALYTICS_WORKSPACE_ID string = aca_env_law.id

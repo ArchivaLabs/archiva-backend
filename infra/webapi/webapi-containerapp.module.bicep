@@ -1,25 +1,18 @@
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
-param aca_env_outputs_azure_container_apps_environment_default_domain string
-
 param aca_env_outputs_azure_container_apps_environment_id string
-
 param webapi_containerimage string
-
 param webapi_identity_outputs_id string
-
 param webapi_containerport string
-
 param dbserver_outputs_sqlserverfqdn string
-
 param storage_outputs_blobendpoint string
-
 param webapi_identity_outputs_clientid string
-
 param aca_env_outputs_azure_container_registry_endpoint string
-
 param aca_env_outputs_azure_container_registry_managed_identity_id string
+
+@secure()
+param sql_admin_password string
 
 resource webapi 'Microsoft.App/containerApps@2025-10-02-preview' = {
   name: 'webapi'
@@ -65,27 +58,7 @@ resource webapi 'Microsoft.App/containerApps@2025-10-02-preview' = {
             }
             {
               name: 'ConnectionStrings__ArchivaDb'
-              value: 'Server=tcp:${dbserver_outputs_sqlserverfqdn},1433;Encrypt=True;Authentication="Active Directory Default";Database=ArchivaDb'
-            }
-            {
-              name: 'ARCHIVADB_HOST'
-              value: dbserver_outputs_sqlserverfqdn
-            }
-            {
-              name: 'ARCHIVADB_PORT'
-              value: '1433'
-            }
-            {
-              name: 'ARCHIVADB_URI'
-              value: 'mssql://${dbserver_outputs_sqlserverfqdn}:1433/ArchivaDb'
-            }
-            {
-              name: 'ARCHIVADB_JDBCCONNECTIONSTRING'
-              value: 'jdbc:sqlserver://${dbserver_outputs_sqlserverfqdn}:1433;database=ArchivaDb;encrypt=true;trustServerCertificate=false'
-            }
-            {
-              name: 'ARCHIVADB_DATABASENAME'
-              value: 'ArchivaDb'
+              value: 'Server=tcp:${dbserver_outputs_sqlserverfqdn},1433;Initial Catalog=ArchivaDb;User ID=archiva-admin;Password=${sql_admin_password};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
             }
             {
               name: 'ConnectionStrings__blobs'
@@ -131,8 +104,8 @@ resource webapi 'Microsoft.App/containerApps@2025-10-02-preview' = {
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${webapi_identity_outputs_id}': { }
-      '${aca_env_outputs_azure_container_registry_managed_identity_id}': { }
+      '${webapi_identity_outputs_id}': {}
+      '${aca_env_outputs_azure_container_registry_managed_identity_id}': {}
     }
   }
 }

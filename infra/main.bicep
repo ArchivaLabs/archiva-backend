@@ -12,6 +12,9 @@ param location string
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
 
+@secure()
+@description('SQL Server administrator password')
+param sqlAdminPassword string
 
 var tags = {
   'azd-env-name': environmentName
@@ -32,6 +35,7 @@ module aca_env 'aca-env/aca-env.module.bicep' = {
     userPrincipalId: principalId
   }
 }
+
 module aca_env_acr 'aca-env-acr/aca-env-acr.module.bicep' = {
   name: 'aca-env-acr'
   scope: rg
@@ -39,13 +43,16 @@ module aca_env_acr 'aca-env-acr/aca-env-acr.module.bicep' = {
     location: location
   }
 }
+
 module dbserver 'dbserver/dbserver.module.bicep' = {
   name: 'dbserver'
   scope: rg
   params: {
     location: location
+    sqlAdminPassword: sqlAdminPassword
   }
 }
+
 module storage 'storage/storage.module.bicep' = {
   name: 'storage'
   scope: rg
@@ -53,6 +60,7 @@ module storage 'storage/storage.module.bicep' = {
     location: location
   }
 }
+
 module webapi_identity 'webapi-identity/webapi-identity.module.bicep' = {
   name: 'webapi-identity'
   scope: rg
@@ -60,17 +68,7 @@ module webapi_identity 'webapi-identity/webapi-identity.module.bicep' = {
     location: location
   }
 }
-module webapi_roles_dbserver 'webapi-roles-dbserver/webapi-roles-dbserver.module.bicep' = {
-  name: 'webapi-roles-dbserver'
-  scope: rg
-  params: {
-    dbserver_outputs_name: dbserver.outputs.name
-    dbserver_outputs_sqlserveradminname: dbserver.outputs.sqlServerAdminName
-    location: location
-    principalId: webapi_identity.outputs.principalId
-    principalName: webapi_identity.outputs.principalName
-  }
-}
+
 module webapi_roles_storage 'webapi-roles-storage/webapi-roles-storage.module.bicep' = {
   name: 'webapi-roles-storage'
   scope: rg
@@ -80,6 +78,7 @@ module webapi_roles_storage 'webapi-roles-storage/webapi-roles-storage.module.bi
     storage_outputs_name: storage.outputs.name
   }
 }
+
 output ACA_ENV_AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN string = aca_env.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN
 output ACA_ENV_AZURE_CONTAINER_APPS_ENVIRONMENT_ID string = aca_env.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_ID
 output ACA_ENV_AZURE_CONTAINER_REGISTRY_ENDPOINT string = aca_env.outputs.AZURE_CONTAINER_REGISTRY_ENDPOINT
