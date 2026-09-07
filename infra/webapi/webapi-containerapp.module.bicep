@@ -58,7 +58,7 @@ resource webapi 'Microsoft.App/containerApps@2025-10-02-preview' = {
             }
             {
               name: 'ConnectionStrings__ArchivaDb'
-              value: 'Server=tcp:${dbserver_outputs_sqlserverfqdn},1433;Initial Catalog=ArchivaDb;User ID=archiva-admin;Password=${sql_admin_password};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+              value: 'Server=tcp:dbserver-hwli5d65dhudk.database.windows.net,1433;Initial Catalog=ArchivaDb;User ID=archiva-admin;Password=${sql_admin_password};Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;'
             }
             {
               name: 'ConnectionStrings__blobs'
@@ -78,7 +78,7 @@ resource webapi 'Microsoft.App/containerApps@2025-10-02-preview' = {
             }
             {
               name: 'AzureAd__TenantId'
-              value: 'bbb41b2b-8961-4881-b480-2268de4887ed'
+              value: 'common'
             }
             {
               name: 'AzureAd__ClientId'
@@ -87,6 +87,10 @@ resource webapi 'Microsoft.App/containerApps@2025-10-02-preview' = {
             {
               name: 'AzureAd__Audience'
               value: '1274d0e7-b545-4dcc-8c4d-005dee797414'
+            }
+            {
+              name: 'AzureAd__ValidateIssuer'
+              value: 'false'
             }
             {
               name: 'AllowedOrigins__0'
