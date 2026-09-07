@@ -90,7 +90,11 @@ resource webapi 'Microsoft.App/containerApps@2025-10-02-preview' = {
             }
             {
               name: 'AllowedOrigins__0'
-              value: 'https://your-static-web-app-url.azurestaticapps.net'
+              value: 'http://localhost:5173'
+            }
+            {
+              name: 'AllowedOrigins__1'
+              value: 'https://archiva-alpha.vercel.app'
             }
           ]
         }
