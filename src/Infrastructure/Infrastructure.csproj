@@ -13,6 +13,11 @@
     <PackageReference Include="Aspire.Microsoft.EntityFrameworkCore.SqlServer" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <!-- Registers the Entra ID authentication providers for Microsoft.Data.SqlClient.
+         Without it, the managed-identity connection string that azd generates
+         ("Authentication=Active Directory Default") fails at connect time with
+         "Cannot find an authentication provider for 'ActiveDirectoryDefault'". -->
+    <PackageReference Include="Microsoft.Data.SqlClient.Extensions.Azure" />
   </ItemGroup>
 
   <ItemGroup>
