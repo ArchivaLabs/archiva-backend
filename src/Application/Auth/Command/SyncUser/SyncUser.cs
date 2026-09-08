@@ -46,10 +46,17 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
         var email = _currentUser.Email!;
         var displayName = _currentUser.Name ?? string.Empty;
 
-        // Check if user already exists in the organisation
+        // Membership is keyed on the Entra object id alone — never on email.
+        // Email is a mutable, tenant-controlled claim, so matching on it would
+        // hand an existing member's organisation to anyone whose token happened
+        // to carry the same preferred_username. It also disagreed with every
+        // other handler (all of which resolve membership by UserId), producing
+        // a user who synced as "existing" but was rejected by every other
+        // endpoint. Email->identity binding belongs to the invitation flow below,
+        // which stamps the real UserId onto the row when the invite is accepted.
         var existingMember = await _context
             .OrganizationUsers.Include(u => u.Organization)
-            .FirstOrDefaultAsync(u => u.Email == email || u.UserId == userId, cancellationToken);
+            .FirstOrDefaultAsync(u => u.UserId == userId, cancellationToken);
 
         if (existingMember is not null)
         {

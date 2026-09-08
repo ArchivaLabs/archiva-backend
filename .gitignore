@@ -506,3 +506,5 @@ $RECYCLE.BIN/
 CLAUDE.md
 plan.md
 ASSUMPTIONS.md
+# Playwright MCP scratch snapshots
+.playwright-mcp/
