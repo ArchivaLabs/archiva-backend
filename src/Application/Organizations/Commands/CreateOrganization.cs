@@ -1,6 +1,8 @@
 using Archiva.Application.Common.Interfaces;
 using Archiva.Domain.Entities;
 using Archiva.Domain.Enums;
+using FluentValidation.Results;
+using ValidationException = Archiva.Application.Common.Exceptions.ValidationException;
 
 namespace Archiva.Application.Organizations.Commands.CreateOrganization;
 
@@ -61,6 +63,30 @@ public class CreateOrganizationCommandHandler
         CancellationToken cancellationToken
     )
     {
+        var userId =
+            _currentUser.Id ?? throw new UnauthorizedAccessException("User is not authenticated");
+
+        // A user belongs to exactly one organisation. Without this guard a repeated
+        // call — a double submit, or a user who navigates back to onboarding —
+        // creates a second organisation and a second membership row. Every other
+        // handler resolves membership with an unordered FirstOrDefaultAsync, so a
+        // user holding two memberships gets a non-deterministic organisation
+        // context between requests: their meetings appear and vanish depending on
+        // which row SQL happens to return.
+        var existingMembership = await _context
+            .OrganizationUsers.Include(u => u.Organization)
+            .FirstOrDefaultAsync(u => u.UserId == userId, cancellationToken);
+
+        if (existingMembership is not null)
+        {
+            throw new ValidationException([
+                new ValidationFailure(
+                    nameof(CreateOrganizationCommand.Name),
+                    $"You already belong to the organisation '{existingMembership.Organization.Name}'."
+                ),
+            ]);
+        }
+
         // Create the Organization
         var newOrganization = new Organization { Name = request.Name, LogoUrl = request.LogoUrl };
         _context.Organizations.Add(newOrganization);
@@ -70,7 +96,7 @@ public class CreateOrganizationCommandHandler
         var member = new OrganizationUser
         {
             OrganizationId = newOrganization.Id,
-            UserId = _currentUser.Id!,
+            UserId = userId,
             UserName = _currentUser.Name!,
             Email = _currentUser.Email!,
             Role = UserRole.Admin,
@@ -92,7 +118,7 @@ public class CreateOrganizationCommandHandler
         {
             OrganizationId = newOrganization.Id,
             Role = UserRole.Admin.ToString(),
-            UserId = _currentUser.Id!,
+            UserId = userId,
             OrganizationName = newOrganization.Name,
             OrganizationLogoUrl = newOrganization.LogoUrl,
         };
