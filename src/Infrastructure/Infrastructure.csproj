@@ -16,7 +16,11 @@
     <!-- Registers the Entra ID authentication providers for Microsoft.Data.SqlClient.
          Without it, the managed-identity connection string that azd generates
          ("Authentication=Active Directory Default") fails at connect time with
-         "Cannot find an authentication provider for 'ActiveDirectoryDefault'". -->
+         "Cannot find an authentication provider for 'ActiveDirectoryDefault'".
+         SqlClient itself is pinned to the same version: EF Core pulls in 7.0.1
+         transitively, and the version skew makes SqlAuthenticationProviderManager
+         resolve the provider constructor twice ("Ambiguous match found"). -->
+    <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="Microsoft.Data.SqlClient.Extensions.Azure" />
   </ItemGroup>
 
