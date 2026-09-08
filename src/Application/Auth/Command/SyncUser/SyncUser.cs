@@ -114,7 +114,17 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
             };
         }
 
-        // Brand new user — needs to create their organisation.
-        return new SyncUserResult { Status = "new" };
+        // Brand new user — needs to create their organisation. Identity fields are
+        // still returned: the caller is authenticated, they simply have no
+        // membership yet. Omitting UserId here left the client with no identity to
+        // store, so it could not tell "signed in, not yet onboarded" apart from
+        // "signed out" and bounced the user between onboarding and login.
+        return new SyncUserResult
+        {
+            Status = "new",
+            UserId = userId,
+            DisplayName = displayName,
+            Email = email,
+        };
     }
 }
