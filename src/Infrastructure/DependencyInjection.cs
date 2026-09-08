@@ -27,11 +27,30 @@ public static class DependencyInjection
             (sp, options) =>
             {
                 options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
-                options.UseSqlServer(connectionString);
+
+                // Azure SQL serverless auto-pauses when idle and takes 30-60s to
+                // resume, answering with transient error 40613 meanwhile. The
+                // default retry budget gives up in roughly 30s, so the first
+                // request after an idle period would 500 even though the database
+                // is on its way up. Ten attempts backing off to 15s comfortably
+                // outlasts a resume.
+                options.UseSqlServer(
+                    connectionString,
+                    sql =>
+                        sql.EnableRetryOnFailure(
+                            maxRetryCount: 10,
+                            maxRetryDelay: TimeSpan.FromSeconds(15),
+                            errorNumbersToAdd: null
+                        )
+                );
             }
         );
 
-        builder.EnrichSqlServerDbContext<ApplicationDbContext>();
+        // Retry is configured explicitly above; without DisableRetry the Aspire
+        // component replaces it with its own defaults.
+        builder.EnrichSqlServerDbContext<ApplicationDbContext>(settings =>
+            settings.DisableRetry = true
+        );
 
         builder.Services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>()
