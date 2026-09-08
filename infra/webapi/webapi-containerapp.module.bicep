@@ -76,30 +76,13 @@ resource webapi 'Microsoft.App/containerApps@2025-10-02-preview' = {
               name: 'AZURE_TOKEN_CREDENTIALS'
               value: 'ManagedIdentityCredential'
             }
-            {
-              name: 'AzureAd__TenantId'
-              value: 'common'
-            }
-            {
-              name: 'AzureAd__ClientId'
-              value: '1274d0e7-b545-4dcc-8c4d-005dee797414'
-            }
-            {
-              name: 'AzureAd__Audience'
-              value: '1274d0e7-b545-4dcc-8c4d-005dee797414'
-            }
-            {
-              name: 'AzureAd__ValidateIssuer'
-              value: 'false'
-            }
-            {
-              name: 'AllowedOrigins__0'
-              value: 'http://localhost:5173'
-            }
-            {
-              name: 'AllowedOrigins__1'
-              value: 'https://archiva-alpha.vercel.app'
-            }
+            // Application config (AzureAd, AllowedOrigins) is deliberately NOT set
+            // here. azd deploy regenerates this container's env block from the
+            // Aspire model and drops anything declared only in bicep, so env vars
+            // set here survive azd provision but vanish on the next deploy — which
+            // is exactly how CORS broke in production on 2026-09-08. That config
+            // now ships inside the image, in src/Web/appsettings.json and
+            // src/Web/appsettings.Production.json. Add app settings there, not here.
           ]
         }
       ]

@@ -1,3 +1,11 @@
+// HAND-TUNED — do not run `azd infra gen` (or `azd infra synth`) against this file.
+// Regeneration silently reverts the Phase 2 cost work: it upgrades the SKU from
+// GP_S_Gen5_1 to GP_S_Gen5_2 (double the vCores), drops autoPauseDelay and
+// minCapacity so the database stops pausing when idle, and switches the server to
+// azureADOnlyAuthentication with a generated managed-identity admin, which
+// disables the SQL login. Verified by regenerating and diffing on 2026-09-08.
+// Edit the values below by hand instead.
+
 @description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
 
