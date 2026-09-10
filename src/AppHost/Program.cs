@@ -12,20 +12,29 @@ var databaseServer = builder
 // Azure Blob Storage
 var storage = builder.AddAzureStorage("storage").RunAsEmulator().AddBlobs(Services.BlobStorage);
 
-// Application Insights connection string. Declared as a parameter rather than set
-// as a Container App env var by hand, because azd deploy regenerates that env
-// block from this model and drops anything it does not know about. azd keeps the
-// value in .azure/<env>/.env (gitignored) and injects it on every deploy, so the
-// ingestion key never enters source control. Unset locally, which leaves the
-// exporter inert — ServiceDefaults only calls UseAzureMonitor when it is present.
-var appInsightsConnectionString = builder.AddParameter("appInsightsConnectionString", secret: true);
+// Application Insights connection string, read at publish time from this AppHost's
+// configuration (user secrets locally, or an environment variable in CI):
+//
+//   dotnet user-secrets set APPLICATIONINSIGHTS_CONNECTION_STRING "<value>" --project src/AppHost
+//
+// It is read here rather than set as a Container App env var by hand, because azd
+// deploy regenerates that env block from this model and drops anything declared
+// only in bicep — which is how CORS broke in production on 2026-09-08.
+//
+// AddParameter() would be the tidier mechanism, but azd generates the container
+// app bicep with the parameter declared and no assignment for it, then fails with
+// BCP258 and never prompts for a value. Reading configuration sidesteps that.
+//
+// Keeping it out of appsettings keeps the ingestion key out of source control.
+// When unset the env var is omitted entirely and the exporter stays inert —
+// ServiceDefaults only calls UseAzureMonitor when the value is present.
+var appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
 
 var web = builder
     .AddProject<Projects.Web>(Services.WebApi)
     .WithReference(databaseServer)
     .WaitFor(databaseServer)
     .WithReference(storage)
-    .WithEnvironment("APPLICATIONINSIGHTS_CONNECTION_STRING", appInsightsConnectionString)
     .WithExternalHttpEndpoints()
     // Scale settings must live in the Aspire model, not in infra/**.bicep: azd
     // deploy regenerates the container app template from this model and would
@@ -46,5 +55,12 @@ var web = builder
             url.Url = "/scalar";
         }
     );
+
+// Applied conditionally so the variable is absent — not empty — when no value is
+// configured, which is the state the exporter treats as "disabled".
+if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+{
+    web.WithEnvironment("APPLICATIONINSIGHTS_CONNECTION_STRING", appInsightsConnectionString);
+}
 
 builder.Build().Run();
