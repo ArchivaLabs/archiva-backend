@@ -153,9 +153,23 @@ public class ApplicationDbContextInitialiser
         await _context.SaveChangesAsync();
 
         // ── 2. Seed user ──────────────────────────────────────────────────
-        var seedUserId = "05ed33c5-59fb-4a79-9411-dbf5c701c2c2";
-        var seedUserName = "Lansa ®";
-        var seedEmail = "olamideiyanda18@gmail.com";
+        // The seed identity comes from configuration rather than being baked in.
+        // It previously hardcoded a real Entra object id and a real personal
+        // email address, which is how a genuine user came to collide with seed
+        // data — see ASSUMPTIONS.md.
+        //
+        // Membership is resolved by UserId alone (see SyncUser), so the defaults
+        // below deliberately belong to nobody: the seeded organisation stays
+        // invisible until a developer claims it. To work against the seeded org
+        // locally, set your own Entra object id — the `oid` claim in your token:
+        //
+        //   dotnet user-secrets set Seed:UserId "<your-oid>" --project src/Web
+        //
+        // The default is intentionally not GUID-shaped so it can never collide
+        // with a real object id.
+        var seedUserId = _configuration["Seed:UserId"] ?? "seed-user-local-development";
+        var seedUserName = _configuration["Seed:UserName"] ?? "Seed User";
+        var seedEmail = _configuration["Seed:Email"] ?? "seed-user@example.com";
 
         var member = new OrganizationUser
         {
