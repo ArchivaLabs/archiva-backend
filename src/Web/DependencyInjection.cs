@@ -44,5 +44,9 @@ public static class DependencyInjection
 
         builder.Services.AddCors();
         builder.Services.AddAntiforgery();
+
+        builder.Services.AddScoped<DocumentAnalysisReconciler>();
+        builder.Services.AddHostedService<DocumentAnalysisQueueWorker>();
+        builder.Services.AddHostedService<DocumentAnalysisReconciliationWorker>();
     }
 }

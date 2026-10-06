@@ -1,5 +1,7 @@
 namespace Archiva.Application.Documents.Dtos;
 
+using Archiva.Domain.Enums;
+
 public record DocumentDto
 {
     public int Id { get; init; }
@@ -10,4 +12,8 @@ public record DocumentDto
     public string? Description { get; init; }
     public string? UploadedBy { get; init; }
     public DateTimeOffset Created { get; init; }
+    public DocumentAnalysisStatus AnalysisStatus { get; init; }
+    public string? AnalysisErrorCode { get; init; }
+    public string? Summary { get; init; }
+    public DateTimeOffset? AnalysisCompletedAt { get; init; }
 }

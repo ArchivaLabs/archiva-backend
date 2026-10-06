@@ -1,4 +1,6 @@
 using Archiva.Application.Common.Interfaces;
+using Archiva.Application.Common.Models;
+using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
@@ -94,6 +96,29 @@ public class BlobStorageService : IStorageService
             );
             var uriBuilder = new BlobUriBuilder(blobClient.Uri) { Sas = sasQueryParams };
             return uriBuilder.ToUri().ToString();
+        }
+    }
+
+    public async Task<byte[]> DownloadAsync(
+        string blobName,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
+        var blobClient = containerClient.GetBlobClient(blobName);
+        try
+        {
+            var response = await blobClient.DownloadContentAsync(cancellationToken);
+            return response.Value.Content.ToArray();
+        }
+        catch (RequestFailedException exception)
+        {
+            throw new DocumentAnalysisProviderException(
+                "blob_download_failed",
+                exception.ErrorCode ?? exception.Status.ToString(),
+                exception.Status == 408 || exception.Status == 429 || exception.Status >= 500,
+                exception
+            );
         }
     }
 

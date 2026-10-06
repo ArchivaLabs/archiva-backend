@@ -31,6 +31,7 @@ resource aca_env_law 'Microsoft.OperationalInsights/workspaces@2025-02-01' = {
   name: take('acaenvlaw-${uniqueString(resourceGroup().id)}', 63)
   location: location
   properties: {
+    retentionInDays: 30
     sku: {
       name: 'PerGB2018'
     }
@@ -42,6 +43,17 @@ resource aca_env 'Microsoft.App/managedEnvironments@2025-07-01' = {
   name: take('acaenv${uniqueString(resourceGroup().id)}', 24)
   location: location
   properties: {
+    peerAuthentication: {
+      mtls: {
+        enabled: false
+      }
+    }
+    peerTrafficConfiguration: {
+      encryption: {
+        enabled: false
+      }
+    }
+    publicNetworkAccess: 'Enabled'
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {

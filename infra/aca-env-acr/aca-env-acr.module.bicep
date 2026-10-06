@@ -7,6 +7,12 @@ resource aca_env_acr 'Microsoft.ContainerRegistry/registries@2025-04-01' = {
   sku: {
     name: 'Basic'
   }
+  properties: {
+    dataEndpointEnabled: false
+    encryption: {
+      status: 'disabled'
+    }
+  }
   tags: {
     'aspire-resource-name': 'aca-env-acr'
   }

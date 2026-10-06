@@ -504,7 +504,10 @@ $RECYCLE.BIN/
 **/appsettings.Development.json
 
 CLAUDE.md
+AGENTS.md
 plan.md
 ASSUMPTIONS.md
+tasks/
+docs/
 # Playwright MCP scratch snapshots
 .playwright-mcp/
