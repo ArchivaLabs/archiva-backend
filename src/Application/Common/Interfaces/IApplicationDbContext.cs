@@ -6,6 +6,7 @@ public interface IApplicationDbContext
 {
     DbSet<Meeting> Meetings { get; }
     DbSet<Document> Documents { get; }
+    DbSet<DocumentAnalysisUsage> DocumentAnalysisUsages { get; }
     DbSet<Tag> Tags { get; }
     DbSet<MeetingTag> MeetingTags { get; }
     DbSet<Organization> Organizations { get; }

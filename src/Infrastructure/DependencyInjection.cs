@@ -1,6 +1,8 @@
 ﻿using Archiva.Application.Common.Interfaces;
+using Archiva.Infrastructure.Analysis;
 using Archiva.Infrastructure.Data;
 using Archiva.Infrastructure.Data.Interceptors;
+using Archiva.Infrastructure.Search;
 using Archiva.Infrastructure.Storage;
 using Archiva.Shared;
 using Microsoft.Data.SqlClient;
@@ -73,6 +75,16 @@ public static class DependencyInjection
             provider.GetRequiredService<ApplicationDbContext>()
         );
 
+        builder.Services.Configure<Archiva.Application.Common.Models.DocumentAnalysisOptions>(
+            builder.Configuration.GetSection(
+                Archiva.Application.Common.Models.DocumentAnalysisOptions.SectionName
+            )
+        );
+        builder.Services.AddSingleton<IDocumentTextExtractor, AzureDocumentTextExtractor>();
+        builder.Services.AddSingleton<IDocumentSummarizer, AzureOpenAISummarizer>();
+        builder.Services.AddScoped<IDocumentAnalysisBudget, DocumentAnalysisBudget>();
+        builder.Services.AddScoped<IDocumentSearchService, SqlDocumentSearchService>();
+
         builder.Services.AddScoped<ApplicationDbContextInitialiser>();
 
         builder.Services.AddSingleton(TimeProvider.System);
@@ -80,6 +92,8 @@ public static class DependencyInjection
         // BlobServiceClient is registered by AddAzureBlobServiceClient and injected
         // into both BlobStorageService (scoped) and UserDelegationKeyProvider (singleton).
         builder.AddAzureBlobServiceClient(Services.BlobStorage);
+        builder.AddAzureQueueServiceClient(Services.AnalysisQueues);
+        builder.Services.AddScoped<IDocumentAnalysisQueue, AzureDocumentAnalysisQueue>();
 
         // Singleton: caches the Azure user delegation key across requests.
         // Must be singleton because BlobStorageService is scoped and cannot

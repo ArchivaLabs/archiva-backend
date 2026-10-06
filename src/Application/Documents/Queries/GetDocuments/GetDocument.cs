@@ -63,6 +63,10 @@ public class GetDocumentQueryHandler : IRequestHandler<GetDocumentQuery, List<Do
                 d.Description,
                 UploadedBy = d.CreatedBy,
                 d.Created,
+                d.AnalysisStatus,
+                d.AnalysisErrorCode,
+                d.Summary,
+                d.AnalysisCompletedAt,
             })
             .ToListAsync(cancellationToken);
 
@@ -79,6 +83,10 @@ public class GetDocumentQueryHandler : IRequestHandler<GetDocumentQuery, List<Do
                 Description = d.Description,
                 UploadedBy = d.UploadedBy,
                 Created = d.Created,
+                AnalysisStatus = d.AnalysisStatus,
+                AnalysisErrorCode = d.AnalysisErrorCode,
+                Summary = d.Summary,
+                AnalysisCompletedAt = d.AnalysisCompletedAt,
             })
         );
 

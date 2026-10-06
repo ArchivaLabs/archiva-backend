@@ -22,6 +22,8 @@ public interface IStorageService
     /// </summary>
     Task<string> GetReadUrlAsync(string blobName, CancellationToken cancellationToken = default);
 
+    Task<byte[]> DownloadAsync(string blobName, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Deletes a blob by its name.
     /// </summary>

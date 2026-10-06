@@ -28,4 +28,6 @@ public static class Services
 
     public const string BlobStorage = "blobs";
     public const string DocumentIntelligence = "document-intelligence";
+    public const string AnalysisQueues = "analysis-queues";
+    public const string AnalysisQueueName = "document-analysis";
 }

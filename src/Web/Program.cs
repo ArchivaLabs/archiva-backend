@@ -1,7 +1,26 @@
 using Archiva.Infrastructure.Data;
+using Archiva.Web.Services;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Scalar.AspNetCore;
+
+if (args.Contains("--reconcile-document-analysis", StringComparer.Ordinal))
+{
+    var jobArguments = args.Where(argument => argument != "--reconcile-document-analysis")
+        .ToArray();
+    var jobBuilder = WebApplication.CreateBuilder(jobArguments);
+    jobBuilder.AddServiceDefaults();
+    jobBuilder.AddApplicationServices();
+    jobBuilder.Services.AddScoped<IUser, DocumentAnalysisReconciliationUser>();
+    jobBuilder.AddInfrastructureServices();
+    jobBuilder.Services.AddScoped<DocumentAnalysisReconciler>();
+
+    await using var jobApp = jobBuilder.Build();
+    await using var scope = jobApp.Services.CreateAsyncScope();
+    var reconciler = scope.ServiceProvider.GetRequiredService<DocumentAnalysisReconciler>();
+    await reconciler.ReconcileAsync(2_000);
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 

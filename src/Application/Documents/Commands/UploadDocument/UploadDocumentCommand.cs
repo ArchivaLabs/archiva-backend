@@ -1,6 +1,9 @@
 using Archiva.Application.Common.Interfaces;
+using Archiva.Application.Common.Models;
 using Archiva.Application.Documents.Dtos;
 using Archiva.Domain.Entities;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Archiva.Application.Documents.Commands.UploadDocument;
 
@@ -19,16 +22,25 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
     private readonly IApplicationDbContext _context;
     private readonly IStorageService _storageService;
     private readonly IUser _currentUser;
+    private readonly IDocumentAnalysisQueue _analysisQueue;
+    private readonly DocumentAnalysisOptions _analysisOptions;
+    private readonly ILogger<UploadDocumentCommandHandler> _logger;
 
     public UploadDocumentCommandHandler(
         IApplicationDbContext context,
         IStorageService storageService,
-        IUser currentUser
+        IUser currentUser,
+        IDocumentAnalysisQueue analysisQueue,
+        IOptions<DocumentAnalysisOptions> analysisOptions,
+        ILogger<UploadDocumentCommandHandler> logger
     )
     {
         _context = context;
         _storageService = storageService;
         _currentUser = currentUser;
+        _analysisQueue = analysisQueue;
+        _analysisOptions = analysisOptions.Value;
+        _logger = logger;
     }
 
     public async Task<DocumentDto> Handle(
@@ -68,10 +80,30 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
             Description = request.Description,
             MeetingId = meeting.Id,
             OrganizationId = member.OrganizationId,
+            AnalysisUnitLimit = _analysisOptions.DefaultDocumentBillableUnitLimit,
+            SummaryInputCharacterLimit = _analysisOptions.DefaultDocumentSummaryCharacterLimit,
         };
 
         _context.Documents.Add(document);
         await _context.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _analysisQueue.EnqueueAsync(document.Id, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                "Document analysis queue publication failed for {DocumentId} in organisation {OrganizationId}; it will be reconciled. Error type: {ErrorType}",
+                document.Id,
+                member.OrganizationId,
+                exception.GetType().Name
+            );
+        }
 
         // Mint a fresh SAS URL for the response — the client gets a
         // short-lived signed URL, never a permanent public blob URL.
@@ -87,6 +119,10 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
             Description = document.Description,
             UploadedBy = _currentUser.Name,
             Created = document.Created,
+            AnalysisStatus = document.AnalysisStatus,
+            AnalysisErrorCode = document.AnalysisErrorCode,
+            Summary = document.Summary,
+            AnalysisCompletedAt = document.AnalysisCompletedAt,
         };
     }
 }

@@ -30,6 +30,40 @@ namespace Archiva.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("AnalysisAttemptCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("AnalysisCompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("AnalysisErrorCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("AnalysisLastAttemptAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("AnalysisLeaseUntil")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("AnalysisQueuedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("AnalysisStartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("AnalysisStatus")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<int>("AnalysisUnitLimit")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(20);
+
+                    b.Property<int>("BillableUnitCount")
+                        .HasColumnType("int");
+
                     b.Property<string>("BlobName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -73,11 +107,52 @@ namespace Archiva.Infrastructure.Migrations
                     b.Property<int>("OrganizationId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Summary")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SummaryInputCharacterLimit")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(100000);
+
+                    b.Property<int>("SummaryInputCharacters")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("MeetingId");
 
                     b.ToTable("Documents");
+                });
+
+            modelBuilder.Entity("Archiva.Domain.Entities.DocumentAnalysisUsage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BillableUnits")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("MonthStartUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SummaryInputCharacters")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MonthStartUtc");
+
+                    b.HasIndex("DocumentId", "MonthStartUtc")
+                        .IsUnique();
+
+                    b.ToTable("DocumentAnalysisUsages");
                 });
 
             modelBuilder.Entity("Archiva.Domain.Entities.Meeting", b =>

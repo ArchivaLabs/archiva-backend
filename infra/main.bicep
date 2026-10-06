@@ -61,6 +61,11 @@ module storage 'storage/storage.module.bicep' = {
   }
 }
 
+module document_analysis_ai '../src/AppHost/document-analysis-ai.bicep' = {
+  name: 'document-analysis-ai'
+  scope: rg
+}
+
 module webapi_identity 'webapi-identity/webapi-identity.module.bicep' = {
   name: 'webapi-identity'
   scope: rg
@@ -87,5 +92,9 @@ output AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN string = aca_env.outputs.
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = aca_env.outputs.AZURE_CONTAINER_REGISTRY_ENDPOINT
 output DBSERVER_SQLSERVERFQDN string = dbserver.outputs.sqlServerFqdn
 output STORAGE_BLOBENDPOINT string = storage.outputs.blobEndpoint
+output STORAGE_QUEUEENDPOINT string = storage.outputs.queueEndpoint
+output DOCUMENT_ANALYSIS_AI_DOCUMENTINTELLIGENCE__ENDPOINT string = document_analysis_ai.outputs.DocumentIntelligence__Endpoint
+output DOCUMENT_ANALYSIS_AI_AZUREOPENAI__ENDPOINT string = document_analysis_ai.outputs.AzureOpenAI__Endpoint
+output DOCUMENT_ANALYSIS_AI_AZUREOPENAI__DEPLOYMENTNAME string = document_analysis_ai.outputs.AzureOpenAI__DeploymentName
 output WEBAPI_IDENTITY_CLIENTID string = webapi_identity.outputs.clientId
 output WEBAPI_IDENTITY_ID string = webapi_identity.outputs.id
