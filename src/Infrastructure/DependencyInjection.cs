@@ -35,7 +35,7 @@ public static class DependencyInjection
         // than in the connection string keeps it safe from azd regeneration.
         var sqlConnection = new SqlConnectionStringBuilder(connectionString)
         {
-            ConnectTimeout = 60,
+            ConnectTimeout = 120,
         };
 
         builder.Services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
