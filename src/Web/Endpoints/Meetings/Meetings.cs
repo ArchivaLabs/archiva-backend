@@ -23,7 +23,8 @@ public class Meetings : IEndpointGroup
 
     [EndpointSummary("Create a new meeting")]
     [EndpointDescription(
-        "Creates a new meeting for the authenticated user's organisation. "
+        "Creates a future meeting for the authenticated user's organisation. "
+            + "UtcOffsetMinutes is the browser's offset from local time to UTC. "
             + "Tags are resolved by name — existing tags are reused, "
             + "unrecognised tag names are created automatically."
     )]

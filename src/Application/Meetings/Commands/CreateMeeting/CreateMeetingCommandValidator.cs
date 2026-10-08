@@ -14,7 +14,17 @@ public class CreateMeetingCommandValidator : AbstractValidator<CreateMeetingComm
 
         RuleFor(x => x.MeetingDate).NotEmpty().WithMessage("Meeting date is required.");
 
-        RuleFor(x => x.MeetingTime).NotEmpty().WithMessage("Meeting time is required.");
+        RuleFor(x => x.MeetingTime)
+            .Must(time => time >= TimeSpan.Zero && time < TimeSpan.FromDays(1))
+            .WithMessage("Meeting time is invalid.");
+
+        RuleFor(x => x.UtcOffsetMinutes)
+            .InclusiveBetween(-840, 720)
+            .WithMessage("The time zone offset is invalid.");
+
+        RuleFor(x => x.MeetingDate)
+            .Must((command, _) => StartsInFuture(command))
+            .WithMessage("Meeting date and time must be in the future.");
 
         RuleFor(x => x.Description)
             .MaximumLength(1000)
@@ -34,5 +44,33 @@ public class CreateMeetingCommandValidator : AbstractValidator<CreateMeetingComm
             .WithMessage("Tag names cannot be empty.")
             .MaximumLength(50)
             .WithMessage("Tag name must not exceed 50 characters.");
+    }
+
+    private static bool StartsInFuture(CreateMeetingCommand command)
+    {
+        if (
+            command.MeetingDate == default
+            || command.MeetingTime < TimeSpan.Zero
+            || command.MeetingTime >= TimeSpan.FromDays(1)
+            || command.UtcOffsetMinutes is < -840 or > 720
+        )
+            return true;
+
+        try
+        {
+            var localStart = DateTime.SpecifyKind(
+                command.MeetingDate.Date + command.MeetingTime,
+                DateTimeKind.Unspecified
+            );
+            var start = new DateTimeOffset(
+                localStart,
+                TimeSpan.FromMinutes(-command.UtcOffsetMinutes)
+            );
+            return start > DateTimeOffset.UtcNow;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return false;
+        }
     }
 }

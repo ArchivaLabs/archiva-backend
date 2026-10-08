@@ -10,6 +10,7 @@ public record CreateMeetingCommand : IRequest<CreateMeetingResult>
     public string? Description { get; init; }
     public DateTime MeetingDate { get; init; }
     public TimeSpan MeetingTime { get; init; }
+    public int UtcOffsetMinutes { get; init; }
     public string? Location { get; init; }
     public List<string> Tags { get; init; } = [];
 }

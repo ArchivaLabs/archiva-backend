@@ -1,6 +1,7 @@
 using Archiva.Application.Documents.Commands.BackfillDocumentAnalysis;
 using Archiva.Application.Documents.Commands.RetryDocumentAnalysis;
 using Archiva.Application.Documents.Dtos;
+using Archiva.Application.Documents.Queries.GetDocumentContent;
 using Archiva.Application.Documents.Queries.GetDocumentDetail;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -18,8 +19,26 @@ public class DocumentAnalysis : IEndpointGroup
     {
         groupBuilder.RequireAuthorization();
         groupBuilder.MapGet(GetDocumentDetailHandler, "{documentId:int}");
+        groupBuilder.MapGet(GetDocumentContentHandler, "{documentId:int}/content");
         groupBuilder.MapPost(RetryDocumentAnalysisHandler, "{documentId:int}/analysis/retry");
         groupBuilder.MapPost(BackfillDocumentAnalysisHandler, "analysis/backfill");
+    }
+
+    [EndpointSummary("Preview document content")]
+    [EndpointDescription(
+        "Returns organisation-scoped document bytes for the authenticated previewer."
+    )]
+    public static async Task<FileContentHttpResult> GetDocumentContentHandler(
+        ISender sender,
+        int documentId,
+        HttpContext httpContext,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await sender.Send(new GetDocumentContentQuery(documentId), cancellationToken);
+        httpContext.Response.Headers.CacheControl = "private, no-store";
+        httpContext.Response.Headers.XContentTypeOptions = "nosniff";
+        return TypedResults.File(result.Content, result.ContentType);
     }
 
     [EndpointSummary("Get a document and its analysis status")]
