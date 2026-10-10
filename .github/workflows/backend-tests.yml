@@ -1,0 +1,46 @@
+name: Backend tests
+
+on:
+  pull_request:
+    branches: [staging]
+  push:
+    branches: [staging]
+
+permissions:
+  contents: read
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore
+        run: dotnet restore Archiva.slnx
+      - name: Build
+        run: dotnet build Archiva.slnx --configuration Release --no-restore
+      - name: Run every test project
+        shell: bash
+        run: |
+          set -euo pipefail
+          for project in Application.UnitTests Application.FunctionalTests Infrastructure.IntegrationTests; do
+            dotnet test "tests/$project/$project.csproj" \
+              --configuration Release --no-restore --no-build \
+              --results-directory "TestResults/$project" \
+              --logger "trx;LogFileName=$project.trx" \
+              --collect "XPlat Code Coverage"
+          done
+          python3 scripts/check-test-results.py \
+            TestResults/Application.UnitTests \
+            TestResults/Application.FunctionalTests \
+            TestResults/Infrastructure.IntegrationTests
+      - name: Upload test results and coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: TestResults/
+          if-no-files-found: warn

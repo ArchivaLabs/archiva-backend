@@ -1,6 +1,7 @@
+using System.Data.Common;
 using Microsoft.Data.SqlClient;
 using Respawn;
-using System.Data.Common;
+using Respawn.Graph;
 
 namespace Archiva.Application.FunctionalTests.Infrastructure;
 
@@ -20,7 +21,14 @@ internal sealed class DatabaseResetter : IAsyncDisposable
         var connection = new SqlConnection(connectionString);
 
         await connection.OpenAsync();
-        var respawner = await Respawner.CreateAsync(connection);
+        var respawner = await Respawner.CreateAsync(
+            connection,
+            new RespawnerOptions
+            {
+                DbAdapter = DbAdapter.SqlServer,
+                TablesToIgnore = [new Table("__EFMigrationsHistory")],
+            }
+        );
         await connection.CloseAsync();
         return new DatabaseResetter(connection, respawner);
     }
@@ -28,8 +36,14 @@ internal sealed class DatabaseResetter : IAsyncDisposable
     public async Task ResetAsync()
     {
         await _connection.OpenAsync();
-        await _respawner.ResetAsync(_connection);
-        await _connection.CloseAsync();
+        try
+        {
+            await _respawner.ResetAsync(_connection);
+        }
+        finally
+        {
+            await _connection.CloseAsync();
+        }
     }
 
     public async ValueTask DisposeAsync() => await _connection.DisposeAsync();

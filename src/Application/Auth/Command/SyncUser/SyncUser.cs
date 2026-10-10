@@ -1,6 +1,7 @@
 using Archiva.Application.Common.Interfaces;
 using Archiva.Domain.Entities;
 using Archiva.Domain.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace Archiva.Application.Auth.Command.SyncUser;
 
@@ -27,11 +28,17 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
 {
     private readonly IApplicationDbContext _context;
     private readonly IUser _currentUser;
+    private readonly ILogger<SyncUserCommandHandler> _logger;
 
-    public SyncUserCommandHandler(IApplicationDbContext context, IUser currentUser)
+    public SyncUserCommandHandler(
+        IApplicationDbContext context,
+        IUser currentUser,
+        ILogger<SyncUserCommandHandler> logger
+    )
     {
         _context = context;
         _currentUser = currentUser;
+        _logger = logger;
     }
 
     public async Task<SyncUserResult> Handle(
@@ -42,8 +49,23 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
         // All identity fields come from the validated Microsoft JWT — not the
         // request body. An unauthenticated caller cannot supply a fake userId
         // or email because they would fail JWT validation before reaching here.
-        var userId = _currentUser.Id!;
-        var email = _currentUser.Email!;
+        var userId = _currentUser.Id;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            _logger.LogWarning("Auth sync denied: {Reason}", "MissingObjectId");
+            throw new UnauthorizedAccessException("Required identity claim is missing");
+        }
+
+        var email = _currentUser.Email;
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            _logger.LogWarning(
+                "Auth sync denied: {Reason} for user {UserId}",
+                "MissingEmail",
+                userId
+            );
+            throw new UnauthorizedAccessException("Required identity claim is missing");
+        }
         var displayName = _currentUser.Name ?? string.Empty;
 
         // Membership is keyed on the Entra object id alone — never on email.
@@ -60,6 +82,11 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
 
         if (existingMember is not null)
         {
+            _logger.LogInformation(
+                "Auth sync resolved existing membership for user {UserId} in organization {OrganizationId}",
+                userId,
+                existingMember.OrganizationId
+            );
             return new SyncUserResult
             {
                 Status = "existing",
@@ -100,6 +127,12 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
             _context.OrganizationUsers.Add(member);
             await _context.SaveChangesAsync(cancellationToken);
 
+            _logger.LogInformation(
+                "Auth sync accepted invitation for user {UserId} in organization {OrganizationId}",
+                userId,
+                invitation.OrganizationId
+            );
+
             return new SyncUserResult
             {
                 Status = "invited",
@@ -119,6 +152,7 @@ public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserR
         // membership yet. Omitting UserId here left the client with no identity to
         // store, so it could not tell "signed in, not yet onboarded" apart from
         // "signed out" and bounced the user between onboarding and login.
+        _logger.LogInformation("Auth sync resolved new user {UserId}", userId);
         return new SyncUserResult
         {
             Status = "new",

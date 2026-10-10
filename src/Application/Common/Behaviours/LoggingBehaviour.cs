@@ -20,14 +20,11 @@ public class LoggingBehaviour<TRequest> : IRequestPreProcessor<TRequest>
     {
         var requestName = typeof(TRequest).Name;
         var userId = _user.Id ?? string.Empty;
-        var userName = _user.Name ?? string.Empty;
 
         _logger.LogInformation(
-            "Archiva Request: {Name} {@UserId} {@UserName} {@Request}",
+            "Archiva Request: {RequestName} for user {UserId}",
             requestName,
-            userId,
-            userName,
-            request
+            userId
         );
 
         return Task.CompletedTask;

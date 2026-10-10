@@ -8,8 +8,11 @@ public class Program
     {
         var builder = DistributedApplication.CreateBuilder(args);
 
-        builder.AddSqlServer(Services.DatabaseServer)
-            .AddDatabase(Services.Database);
+        builder.AddSqlServer(Services.DatabaseServer).AddDatabase(Services.Database);
+
+        var storage = builder.AddAzureStorage("storage").RunAsEmulator();
+        storage.AddBlobs(Services.BlobStorage);
+        storage.AddQueues(Services.AnalysisQueues);
 
         builder.Build().Run();
     }

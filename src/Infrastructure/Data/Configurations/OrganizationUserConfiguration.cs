@@ -9,5 +9,6 @@ public class OrganizationUserConfiguration : IEntityTypeConfiguration<Organizati
     public void Configure(EntityTypeBuilder<OrganizationUser> builder)
     {
         builder.HasKey(ou => new { ou.OrganizationId, ou.UserId });
+        builder.HasIndex(ou => ou.UserId).IsUnique();
     }
 }

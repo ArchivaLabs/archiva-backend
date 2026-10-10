@@ -2,6 +2,7 @@ using Archiva.Application.Common.Interfaces;
 using Archiva.Domain.Entities;
 using Archiva.Domain.Enums;
 using FluentValidation.Results;
+using Microsoft.Extensions.Logging;
 using ValidationException = Archiva.Application.Common.Exceptions.ValidationException;
 
 namespace Archiva.Application.Organizations.Commands.CreateOrganization;
@@ -27,6 +28,7 @@ public class CreateOrganizationCommandHandler
 {
     private readonly IApplicationDbContext _context;
     private readonly IUser _currentUser;
+    private readonly ILogger<CreateOrganizationCommandHandler> _logger;
 
     // Default tags seeded for every now organization that is created.
     private static readonly string[] DefaultTags =
@@ -52,10 +54,15 @@ public class CreateOrganizationCommandHandler
         "Examinations",
     ];
 
-    public CreateOrganizationCommandHandler(IApplicationDbContext context, IUser currentUser)
+    public CreateOrganizationCommandHandler(
+        IApplicationDbContext context,
+        IUser currentUser,
+        ILogger<CreateOrganizationCommandHandler> logger
+    )
     {
         _context = context;
         _currentUser = currentUser;
+        _logger = logger;
     }
 
     public async Task<CreateOrganizationResult> Handle(
@@ -79,23 +86,20 @@ public class CreateOrganizationCommandHandler
 
         if (existingMembership is not null)
         {
-            throw new ValidationException([
-                new ValidationFailure(
-                    nameof(CreateOrganizationCommand.Name),
-                    $"You already belong to the organisation '{existingMembership.Organization.Name}'."
-                ),
-            ]);
+            _logger.LogWarning(
+                "Organization creation rejected: user {UserId} already belongs to organization {OrganizationId}",
+                userId,
+                existingMembership.OrganizationId
+            );
+            throw AlreadyMember(existingMembership.Organization.Name);
         }
 
-        // Create the Organization
         var newOrganization = new Organization { Name = request.Name, LogoUrl = request.LogoUrl };
         _context.Organizations.Add(newOrganization);
-        await _context.SaveChangesAsync(cancellationToken);
 
-        // Create the first user as the Admin of the organization
         var member = new OrganizationUser
         {
-            OrganizationId = newOrganization.Id,
+            Organization = newOrganization,
             UserId = userId,
             UserName = _currentUser.Name!,
             Email = _currentUser.Email!,
@@ -108,11 +112,44 @@ public class CreateOrganizationCommandHandler
         var defaultTags = DefaultTags.Select(name => new Tag
         {
             Name = name,
-            OrganizationId = newOrganization.Id,
+            Organization = newOrganization,
         });
 
         _context.Tags.AddRange(defaultTags);
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            // EF saves all three entity types in one implicit transaction.
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex)
+        {
+            // The unique UserId index closes the race between the membership check
+            // and insert. Only translate a failed save when the winner is visible.
+            var concurrentMembership = await _context
+                .OrganizationUsers.AsNoTracking()
+                .Include(u => u.Organization)
+                .FirstOrDefaultAsync(u => u.UserId == userId, cancellationToken);
+
+            if (concurrentMembership is not null)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Concurrent organization creation rejected: user {UserId} belongs to organization {OrganizationId}",
+                    userId,
+                    concurrentMembership.OrganizationId
+                );
+                throw AlreadyMember(concurrentMembership.Organization.Name);
+            }
+
+            _logger.LogError(ex, "Organization creation failed for user {UserId}", userId);
+            throw;
+        }
+
+        _logger.LogInformation(
+            "Organization {OrganizationId} created with admin user {UserId}",
+            newOrganization.Id,
+            userId
+        );
 
         return new CreateOrganizationResult
         {
@@ -123,4 +160,12 @@ public class CreateOrganizationCommandHandler
             OrganizationLogoUrl = newOrganization.LogoUrl,
         };
     }
+
+    private static ValidationException AlreadyMember(string organizationName) =>
+        new([
+            new ValidationFailure(
+                nameof(CreateOrganizationCommand.Name),
+                $"You already belong to the organisation '{organizationName}'."
+            ),
+        ]);
 }
