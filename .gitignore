@@ -83,6 +83,9 @@ __azurite_db_*.json
 __blobstorage__/
 __queuestorage__/
 
+# LLM council reports and transcripts
+/council/
+
 # StyleCop
 StyleCopReport.xml
 
