@@ -90,3 +90,5 @@ app.MapDefaultEndpoints();
 app.MapEndpoints(typeof(Program).Assembly);
 
 app.Run();
+
+public partial class Program;

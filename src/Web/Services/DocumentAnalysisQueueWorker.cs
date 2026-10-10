@@ -79,7 +79,7 @@ public sealed class DocumentAnalysisQueueWorker : BackgroundService
         }
     }
 
-    private async Task ProcessMessageAsync(
+    internal async Task ProcessMessageAsync(
         QueueMessage message,
         CancellationToken cancellationToken
     )

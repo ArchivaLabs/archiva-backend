@@ -1,10 +1,8 @@
 namespace Archiva.Application.FunctionalTests.Infrastructure;
 
+[NonParallelizable]
 public abstract class TestBase
 {
     [SetUp]
-    public async Task SetUp()
-    {
-        // await TestApp.ResetState();
-    }
+    public Task SetUp() => TestApp.ResetAsync();
 }
