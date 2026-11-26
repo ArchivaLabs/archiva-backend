@@ -1,4 +1,5 @@
 using Archiva.Application.Common.Interfaces;
+using Archiva.Web.Authentication;
 using Archiva.Web.Services;
 // using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -27,6 +28,7 @@ public static class DependencyInjection
             .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
+        builder.AddGoogleAuthentication();
         builder.Services.AddAuthorization();
 
         // Customise default API behaviour

@@ -1,5 +1,6 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Archiva.Application.Common.Interfaces;
+using Archiva.Web.Authentication;
 using Microsoft.Identity.Web;
 
 namespace Archiva.Web.Services;
@@ -13,7 +14,19 @@ public class CurrentUser : IUser
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public string? Id => _httpContextAccessor.HttpContext?.User?.GetObjectId();
+    private ClaimsPrincipal? Principal => _httpContextAccessor.HttpContext?.User;
+
+    public string AuthenticationProvider =>
+        GoogleAuthentication.IsGoogle(Principal) ? "Google" : "Microsoft";
+
+    public bool CanClaimInvitation =>
+        AuthenticationProvider != "Google"
+        || Principal?.HasClaim(GoogleAuthentication.InvitationClaim, "true") == true;
+
+    public string? Id =>
+        AuthenticationProvider == "Google"
+            ? Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
+            : Principal?.GetObjectId();
 
     public string? Name =>
         _httpContextAccessor.HttpContext?.User?.FindFirstValue("name")

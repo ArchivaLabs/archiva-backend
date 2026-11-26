@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Archiva.Domain.Entities;
 
 public class UserInvitation : BaseAuditableEntity
@@ -6,6 +8,8 @@ public class UserInvitation : BaseAuditableEntity
     public int OrganizationId { get; set; }
     public Organization Organization { get; set; } = null!;
     public UserRole Role { get; set; } = UserRole.User;
+
+    [ConcurrencyCheck]
     public bool IsAccepted { get; set; }
     public DateTime ExpiresAt { get; set; }
 }

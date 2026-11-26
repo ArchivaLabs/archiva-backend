@@ -1,13 +1,10 @@
 using Archiva.Application.Common.Interfaces;
 using Archiva.Domain.Entities;
-using Archiva.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace Archiva.Application.Auth.Command.SyncUser;
 
-// Empty command — all identity fields come from the validated JWT via IUser,
-// not from the request body. This closes the org-membership enumeration oracle
-// and the caller-supplied UserId injection vulnerability.
+// Identity comes from the authenticated principal via IUser.
 public record SyncUserCommand : IRequest<SyncUserResult>;
 
 public record SyncUserResult
@@ -23,142 +20,202 @@ public record SyncUserResult
     public string? UserId { get; init; }
 }
 
-// Handler
-public class SyncUserCommandHandler : IRequestHandler<SyncUserCommand, SyncUserResult>
+public class SyncUserCommandHandler(
+    IApplicationDbContext context,
+    IUser currentUser,
+    ILogger<SyncUserCommandHandler> logger
+) : IRequestHandler<SyncUserCommand, SyncUserResult>
 {
-    private readonly IApplicationDbContext _context;
-    private readonly IUser _currentUser;
-    private readonly ILogger<SyncUserCommandHandler> _logger;
-
-    public SyncUserCommandHandler(
-        IApplicationDbContext context,
-        IUser currentUser,
-        ILogger<SyncUserCommandHandler> logger
-    )
-    {
-        _context = context;
-        _currentUser = currentUser;
-        _logger = logger;
-    }
-
     public async Task<SyncUserResult> Handle(
         SyncUserCommand request,
         CancellationToken cancellationToken
     )
     {
-        // All identity fields come from the validated Microsoft JWT — not the
-        // request body. An unauthenticated caller cannot supply a fake userId
-        // or email because they would fail JWT validation before reaching here.
-        var userId = _currentUser.Id;
+        var provider = currentUser.AuthenticationProvider;
+        using var scope = logger.BeginScope(
+            new Dictionary<string, object> { ["AuthenticationProvider"] = provider }
+        );
+
+        var userId = currentUser.Id;
         if (string.IsNullOrWhiteSpace(userId))
         {
-            _logger.LogWarning("Auth sync denied: {Reason}", "MissingObjectId");
+            logger.LogWarning(
+                "Auth sync denied: {Reason}",
+                provider == "Microsoft" ? "MissingObjectId" : "MissingSubject"
+            );
             throw new UnauthorizedAccessException("Required identity claim is missing");
         }
 
-        var email = _currentUser.Email;
+        var email = currentUser.Email?.Trim();
         if (string.IsNullOrWhiteSpace(email))
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Auth sync denied: {Reason} for user {UserId}",
                 "MissingEmail",
                 userId
             );
             throw new UnauthorizedAccessException("Required identity claim is missing");
         }
-        var displayName = _currentUser.Name ?? string.Empty;
 
-        // Membership is keyed on the Entra object id alone — never on email.
-        // Email is a mutable, tenant-controlled claim, so matching on it would
-        // hand an existing member's organisation to anyone whose token happened
-        // to carry the same preferred_username. It also disagreed with every
-        // other handler (all of which resolve membership by UserId), producing
-        // a user who synced as "existing" but was rejected by every other
-        // endpoint. Email->identity binding belongs to the invitation flow below,
-        // which stamps the real UserId onto the row when the invite is accepted.
-        var existingMember = await _context
-            .OrganizationUsers.Include(u => u.Organization)
-            .FirstOrDefaultAsync(u => u.UserId == userId, cancellationToken);
-
+        var existingMember = await FindMembership(userId, cancellationToken);
         if (existingMember is not null)
-        {
-            _logger.LogInformation(
-                "Auth sync resolved existing membership for user {UserId} in organization {OrganizationId}",
-                userId,
-                existingMember.OrganizationId
-            );
-            return new SyncUserResult
-            {
-                Status = "existing",
-                OrganizationId = existingMember.OrganizationId,
-                OrganizationName = existingMember.Organization.Name,
-                OrganizationUrl = existingMember.Organization.LogoUrl,
-                Role = existingMember.Role.ToString(),
-                UserId = existingMember.UserId,
-                DisplayName = existingMember.UserName,
-                AvatarUrl = existingMember.AvatarUrl,
-                Email = existingMember.Email,
-            };
-        }
+            return Report("existing", existingMember);
 
-        // Check if the user has a pending invitation
-        var invitation = await _context
-            .UserInvitations.Include(i => i.Organization)
-            .FirstOrDefaultAsync(
-                i => i.Email == email && !i.IsAccepted && i.ExpiresAt > DateTime.UtcNow,
+        // Email is only used to redeem invitations. Membership is keyed by the
+        // authenticated subject supplied by IUser, including its Google namespace.
+        var reason = "InvitationIneligible";
+        if (currentUser.CanClaimInvitation)
+        {
+            var invitations = await FindPendingInvitations(
+                email.ToUpperInvariant(),
                 cancellationToken
             );
 
-        if (invitation is not null)
-        {
-            var member = new OrganizationUser
+            if (invitations.Count == 1)
             {
-                UserId = userId,
-                Email = email,
-                UserName = displayName,
-                AvatarUrl = null, // Microsoft Graph photo not fetched at this stage
-                OrganizationId = invitation.OrganizationId,
-                Organization = invitation.Organization,
-                Role = invitation.Role,
-                JoinedAt = DateTime.UtcNow,
-            };
+                var invitation = invitations[0];
+                var member = new OrganizationUser
+                {
+                    UserId = userId,
+                    Email = email,
+                    UserName = currentUser.Name ?? string.Empty,
+                    Organization = invitation.Organization,
+                    OrganizationId = invitation.OrganizationId,
+                    Role = invitation.Role,
+                    JoinedAt = DateTime.UtcNow,
+                };
 
-            invitation.IsAccepted = true;
-            _context.OrganizationUsers.Add(member);
-            await _context.SaveChangesAsync(cancellationToken);
+                invitation.IsAccepted = true;
+                context.OrganizationUsers.Add(member);
+                try
+                {
+                    // The invitation concurrency token and unique membership index
+                    // guard both writes in EF's implicit SaveChanges transaction.
+                    await context.SaveChangesAsync(cancellationToken);
+                    return Report("invited", member);
+                }
+                catch (DbUpdateException ex)
+                {
+                    context.OrganizationUsers.Entry(member).State = EntityState.Detached;
+                    context.UserInvitations.Entry(invitation).State = EntityState.Detached;
 
-            _logger.LogInformation(
-                "Auth sync accepted invitation for user {UserId} in organization {OrganizationId}",
-                userId,
-                invitation.OrganizationId
-            );
+                    if (
+                        ex is not DbUpdateConcurrencyException
+                        || !ex.Entries.Any(entry => ReferenceEquals(entry.Entity, invitation))
+                    )
+                    {
+                        existingMember = await FindMembership(userId, cancellationToken);
+                        if (existingMember is not null)
+                            return Report("existing", existingMember, "ConcurrentMembership");
 
-            return new SyncUserResult
+                        logger.LogError(
+                            "Auth sync failed for {AuthenticationProvider}. Error: {ErrorType}",
+                            provider,
+                            ex.GetType().Name
+                        );
+                        throw;
+                    }
+
+                    reason = "InvitationChanged";
+                }
+            }
+            else
             {
-                Status = "invited",
-                OrganizationId = invitation.OrganizationId,
-                Role = UserRole.User.ToString(),
-                UserId = member.UserId,
-                DisplayName = displayName,
-                Email = email,
-                AvatarUrl = null,
-                OrganizationName = invitation.Organization.Name,
-                OrganizationUrl = invitation.Organization.LogoUrl,
-            };
+                reason = invitations.Count == 0 ? "NoPendingInvitation" : "AmbiguousInvitation";
+            }
         }
 
-        // Brand new user — needs to create their organisation. Identity fields are
-        // still returned: the caller is authenticated, they simply have no
-        // membership yet. Omitting UserId here left the client with no identity to
-        // store, so it could not tell "signed in, not yet onboarded" apart from
-        // "signed out" and bounced the user between onboarding and login.
-        _logger.LogInformation("Auth sync resolved new user {UserId}", userId);
+        // Membership may have appeared after the first lookup, even if there
+        // is no remaining invitation to claim.
+        existingMember = await FindMembership(userId, cancellationToken);
+        if (existingMember is not null)
+            return Report("existing", existingMember, "ConcurrentMembership");
+
+        var status = reason == "AmbiguousInvitation" ? "invitationReview" : "new";
+        logger.LogInformation(
+            "Auth sync resolved {Status} for {AuthenticationProvider}. Reason: {Reason}",
+            status,
+            provider,
+            reason
+        );
         return new SyncUserResult
         {
-            Status = "new",
+            Status = status,
             UserId = userId,
-            DisplayName = displayName,
+            DisplayName = currentUser.Name ?? string.Empty,
             Email = email,
+        };
+    }
+
+    private Task<OrganizationUser?> FindMembership(
+        string userId,
+        CancellationToken cancellationToken
+    ) =>
+        context
+            .OrganizationUsers.AsNoTracking()
+            .Include(u => u.Organization)
+            .FirstOrDefaultAsync(u => u.UserId == userId, cancellationToken);
+
+    private async Task<List<UserInvitation>> FindPendingInvitations(
+        string normalizedEmail,
+        CancellationToken cancellationToken
+    )
+    {
+        var candidates = context
+            .UserInvitations.Where(i =>
+                !i.IsAccepted
+                && i.ExpiresAt > DateTime.UtcNow
+                && i.Email.Trim().ToUpper() == normalizedEmail
+            )
+            .Include(i => i.Organization);
+
+        // SQL collation can equate distinct addresses. Require an ordinal match
+        // on the normalized address before treating an invitation as eligible.
+        var matches = new List<UserInvitation>(capacity: 2);
+        await foreach (
+            var candidate in candidates.AsAsyncEnumerable().WithCancellation(cancellationToken)
+        )
+        {
+            if (candidate.Email.Trim().ToUpperInvariant() == normalizedEmail)
+                matches.Add(candidate);
+            if (matches.Count == 2)
+                break;
+        }
+        return matches;
+    }
+
+    private SyncUserResult Report(string status, OrganizationUser member, string? reason = null)
+    {
+        if (status == "existing" && reason is null)
+        {
+            logger.LogInformation(
+                "Auth sync resolved existing membership for user {UserId} in organization {OrganizationId}",
+                member.UserId,
+                member.OrganizationId
+            );
+        }
+        else
+        {
+            logger.LogInformation(
+                "Auth sync resolved {Status} for {AuthenticationProvider} in organization {OrganizationId} with role {Role}. Reason: {Reason}",
+                status,
+                currentUser.AuthenticationProvider,
+                member.OrganizationId,
+                member.Role,
+                reason
+            );
+        }
+        return new SyncUserResult
+        {
+            Status = status,
+            OrganizationId = member.OrganizationId,
+            OrganizationName = member.Organization.Name,
+            OrganizationUrl = member.Organization.LogoUrl,
+            Role = member.Role.ToString(),
+            UserId = member.UserId,
+            DisplayName = member.UserName,
+            AvatarUrl = member.AvatarUrl,
+            Email = member.Email,
         };
     }
 }

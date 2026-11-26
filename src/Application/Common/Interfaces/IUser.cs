@@ -7,4 +7,6 @@ public interface IUser
     string? Email { get; }
     string? OrganizationId { get; }
     List<string>? Role { get; }
+    string AuthenticationProvider => "Microsoft";
+    bool CanClaimInvitation => true;
 }

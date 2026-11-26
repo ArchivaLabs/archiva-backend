@@ -340,6 +340,7 @@ namespace Archiva.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsAccepted")
+                        .IsConcurrencyToken()
                         .HasColumnType("bit");
 
                     b.Property<DateTimeOffset>("LastModified")
@@ -359,6 +360,45 @@ namespace Archiva.Infrastructure.Migrations
                     b.HasIndex("OrganizationId");
 
                     b.ToTable("UserInvitations");
+                });
+
+            modelBuilder.Entity("Archiva.Infrastructure.Data.GoogleSession", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("Ticket")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("Key");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.ToTable("GoogleSessions");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FriendlyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Xml")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DataProtectionKeys");
                 });
 
             modelBuilder.Entity("Archiva.Domain.Entities.Document", b =>
