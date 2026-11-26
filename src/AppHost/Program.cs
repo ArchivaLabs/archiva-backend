@@ -107,6 +107,30 @@ if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
     web.WithEnvironment("APPLICATIONINSIGHTS_CONNECTION_STRING", appInsightsConnectionString);
 }
 
+var googleAuth = builder.Configuration.GetSection("GoogleAuth");
+if (bool.TryParse(googleAuth["Enabled"], out var enableGoogle) && enableGoogle)
+{
+    web.WithEnvironment("GoogleAuth__Enabled", "true")
+        .WithEnvironment("GoogleAuth__FrontendOrigin", googleAuth["FrontendOrigin"])
+        .WithEnvironment("GoogleAuth__ClientId", googleAuth["ClientId"])
+        .WithEnvironment(
+            "GoogleAuth__ClientSecret",
+            builder.AddParameter("google-client-secret", secret: true)
+        );
+
+    if (builder.ExecutionContext.IsPublishMode)
+    {
+        web.WithEnvironment(
+                "GoogleAuth__KeyCertificate",
+                builder.AddParameter("google-key-certificate", secret: true)
+            )
+            .WithEnvironment(
+                "GoogleAuth__KeyCertificatePassword",
+                builder.AddParameter("google-key-certificate-password", secret: true)
+            );
+    }
+}
+
 if (!string.IsNullOrWhiteSpace(webIdentityClientId))
     web.WithEnvironment("AZURE_CLIENT_ID", webIdentityClientId);
 

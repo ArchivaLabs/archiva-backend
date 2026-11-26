@@ -1,4 +1,5 @@
 using Archiva.Infrastructure.Data;
+using Archiva.Web.Authentication;
 using Archiva.Web.Services;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -71,7 +72,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+app.UseGoogleRequestHeaders();
 app.UseAuthentication();
+app.UseGoogleSessionProtection();
 app.UseAuthorization();
 app.UseAntiforgery();
 
